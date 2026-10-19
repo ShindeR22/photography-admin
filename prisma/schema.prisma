@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Member {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  memberNumber   String   @unique
+  name           String
+  email          String   @unique
+  phone          String?
+  membershipType String
+  joinedAt       DateTime @default(now())
+  expiresAt      DateTime?
+  status         String   @default("Pending")
+}
+
+model Workshop {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  title          String
+  date           DateTime
+  venue          String
+  registrationFee Float
+  description    String
+  mentorName     String
+  time           String
+  status         String   @default("Planning")
+  createdAt      DateTime @default(now())
+
+  @@map("workshops")
+}

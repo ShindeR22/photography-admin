@@ -1,0 +1,841 @@
+"use client";
+
+import Link from "next/link";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+
+type MemberStatus = "Active" | "Pending" | "Expired";
+type Member = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  type: "Annual" | "Lifetime" | "Student";
+  joined: string;
+  expires: string;
+  status: MemberStatus;
+  avatar: string;
+  tone: string;
+};
+
+const initialMembers: Member[] = [
+  {
+    id: "PCA-0248",
+    name: "Aarav Deshmukh",
+    email: "aarav.deshmukh@gmail.com",
+    phone: "+91 98220 45812",
+    type: "Lifetime",
+    joined: "18 Oct, 2026",
+    expires: "Lifetime",
+    status: "Active",
+    avatar: "AD",
+    tone: "sage",
+  },
+  {
+    id: "PCA-0247",
+    name: "Mira Kulkarni",
+    email: "mira.kulkarni@gmail.com",
+    phone: "+91 98230 11648",
+    type: "Annual",
+    joined: "17 Oct, 2026",
+    expires: "17 Oct, 2027",
+    status: "Active",
+    avatar: "MK",
+    tone: "peach",
+  },
+  {
+    id: "PCA-0246",
+    name: "Rohan Patil",
+    email: "rohan.patil@gmail.com",
+    phone: "+91 97654 82731",
+    type: "Annual",
+    joined: "16 Oct, 2026",
+    expires: "16 Oct, 2027",
+    status: "Pending",
+    avatar: "RP",
+    tone: "blue",
+  },
+  {
+    id: "PCA-0245",
+    name: "Ananya Shah",
+    email: "ananya.shah@gmail.com",
+    phone: "+91 98224 10576",
+    type: "Student",
+    joined: "15 Oct, 2026",
+    expires: "15 Oct, 2027",
+    status: "Active",
+    avatar: "AS",
+    tone: "lavender",
+  },
+  {
+    id: "PCA-0244",
+    name: "Neha Shah",
+    email: "neha.shah@gmail.com",
+    phone: "+91 98900 25143",
+    type: "Annual",
+    joined: "14 Oct, 2026",
+    expires: "14 Oct, 2027",
+    status: "Active",
+    avatar: "NS",
+    tone: "rose",
+  },
+  {
+    id: "PCA-0243",
+    name: "Kabir Joshi",
+    email: "kabir.joshi@gmail.com",
+    phone: "+91 97632 74105",
+    type: "Student",
+    joined: "12 Oct, 2026",
+    expires: "12 Oct, 2027",
+    status: "Pending",
+    avatar: "KJ",
+    tone: "yellow",
+  },
+  {
+    id: "PCA-0242",
+    name: "Ishita Rao",
+    email: "ishita.rao@gmail.com",
+    phone: "+91 98221 30642",
+    type: "Annual",
+    joined: "08 Oct, 2026",
+    expires: "08 Oct, 2026",
+    status: "Expired",
+    avatar: "IR",
+    tone: "blue",
+  },
+  {
+    id: "PCA-0241",
+    name: "Devika Nair",
+    email: "devika.nair@gmail.com",
+    phone: "+91 90110 56823",
+    type: "Lifetime",
+    joined: "05 Oct, 2026",
+    expires: "Lifetime",
+    status: "Active",
+    avatar: "DN",
+    tone: "peach",
+  },
+  {
+    id: "PCA-0240",
+    name: "Siddharth Mehta",
+    email: "siddharth.mehta@gmail.com",
+    phone: "+91 98901 77520",
+    type: "Annual",
+    joined: "02 Oct, 2026",
+    expires: "02 Oct, 2027",
+    status: "Active",
+    avatar: "SM",
+    tone: "sage",
+  },
+  {
+    id: "PCA-0239",
+    name: "Priya Kulkarni",
+    email: "priya.kulkarni@gmail.com",
+    phone: "+91 98226 11984",
+    type: "Student",
+    joined: "29 Sep, 2026",
+    expires: "29 Sep, 2027",
+    status: "Active",
+    avatar: "PK",
+    tone: "lavender",
+  },
+];
+
+function Icon({ name, size = 18 }: { name: string; size?: number }) {
+  const shapes: Record<string, ReactNode> = {
+    grid: (
+      <>
+        <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
+        <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
+        <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
+        <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
+      </>
+    ),
+    users: (
+      <>
+        <path d="M16 20v-1.5a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4V20" />
+        <circle cx="9.5" cy="7" r="4" />
+        <path d="M20.5 20v-1.5a4 4 0 0 0-3-3.87M16 3.2a4 4 0 0 1 0 7.6" />
+      </>
+    ),
+    calendar: (
+      <>
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M16 3v4M8 3v4M3 10h18" />
+      </>
+    ),
+    ticket: (
+      <>
+        <path d="M4 7a2 2 0 0 0 0 4v2a2 2 0 0 0 0 4h16v-4a2 2 0 0 1 0-4V5H4z" />
+        <path d="M13 5v2M13 11v2M13 17v2" />
+      </>
+    ),
+    wallet: (
+      <>
+        <rect x="3" y="5" width="18" height="15" rx="2" />
+        <path d="M3 9h18M16 14h2" />
+      </>
+    ),
+    settings: (
+      <>
+        <circle cx="12" cy="12" r="3" />
+        <path d="m19 13 2 1-2 4-2-1-2 1v2H9v-2l-2-1-2 1-2-4 2-1v-2l-2-1 2-4 2 1 2-1V4h6v2l2 1 2-1 2 4-2 1z" />
+      </>
+    ),
+    camera: (
+      <>
+        <path d="M14 4H9L7 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z" />
+        <circle cx="12" cy="13" r="3.5" />
+      </>
+    ),
+    search: (
+      <>
+        <circle cx="10.8" cy="10.8" r="6.8" />
+        <path d="m16 16 4.5 4.5" />
+      </>
+    ),
+    plus: (
+      <>
+        <path d="M12 5v14M5 12h14" />
+      </>
+    ),
+    download: (
+      <>
+        <path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4" />
+      </>
+    ),
+    more: (
+      <>
+        <circle cx="5" cy="12" r="1" />
+        <circle cx="12" cy="12" r="1" />
+        <circle cx="19" cy="12" r="1" />
+      </>
+    ),
+    filter: (
+      <>
+        <path d="M4 7h16M7 12h10m-7 5h4" />
+      </>
+    ),
+    chevron: <path d="m9 18 6-6-6-6" />,
+    bell: (
+      <>
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+      </>
+    ),
+  };
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {shapes[name] ?? shapes.users}
+    </svg>
+  );
+}
+
+export default function MembersDirectory() {
+  const [members, setMembers] = useState(initialMembers);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("All members");
+  const [type, setType] = useState("All types");
+  const [activeTab, setActiveTab] = useState("All members");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+
+  const visibleMembers = useMemo(
+    () =>
+      members.filter((member) => {
+        const needle = query.trim().toLowerCase();
+        const matchesSearch =
+          !needle ||
+          [member.name, member.email, member.id, member.phone].some((value) =>
+            value.toLowerCase().includes(needle),
+          );
+        const matchesStatus = status === "All members" || member.status === status;
+        const matchesType = type === "All types" || member.type === type;
+        const matchesTab =
+          activeTab === "All members" ||
+          (activeTab === "Renewals due"
+            ? member.status === "Expired"
+            : member.status === "Pending");
+        return matchesSearch && matchesStatus && matchesType && matchesTab;
+      }),
+    [members, query, status, type, activeTab],
+  );
+
+  function addMember(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const name = newName.trim();
+    if (!name || !newEmail.trim()) return;
+    const initials = name
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase();
+    setMembers((current) => [
+      {
+        id: `PCA-${String(248 + current.length - initialMembers.length + 1).padStart(4, "0")}`,
+        name,
+        email: newEmail.trim(),
+        phone: "—",
+        type: "Annual",
+        joined: "Today",
+        expires: "19 Oct, 2027",
+        status: "Pending",
+        avatar: initials,
+        tone: "sage",
+      },
+      ...current,
+    ]);
+    setQuery("");
+    setStatus("All members");
+    setType("All types");
+    setActiveTab("All members");
+    setNewName("");
+    setNewEmail("");
+    setShowAddForm(false);
+  }
+
+  return (
+    <main className="min-h-screen bg-[#f7f8f5] text-[#1c2720]">
+      <aside className="sidebar fixed inset-y-0 left-0 z-20 hidden w-[252px] flex-col bg-[#19241d] px-5 py-6 text-white lg:flex">
+        <Link href="/" className="mb-10 flex items-center gap-3 px-2">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-[#d5edbd] text-[#243a27]">
+            <Icon name="camera" size={21} />
+          </span>
+          <span>
+            <span className="block text-[15px] font-semibold tracking-tight">Pune Camera</span>
+            <span className="mt-0.5 block text-[11px] tracking-[.12em] text-[#a5b3a7]">
+              PHOTOGRAPHY ASSOCIATION
+            </span>
+          </span>
+        </Link>
+        <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[.16em] text-[#87968a]">
+          Workspace
+        </p>
+        <nav className="space-y-1" aria-label="Main navigation">
+          <NavItem href="/" label="Overview" icon="grid" />
+          <NavItem href="/members" label="Members" icon="users" count="248" active />
+          <NavItem href="/workshops" label="Workshops" icon="calendar" />
+          <NavItem href="/registrations" label="Registrations" icon="ticket" count="12" />
+          <NavItem href="/#accounts" label="Accounts" icon="wallet" />
+        </nav>
+        <p className="mb-3 mt-9 px-3 text-[10px] font-semibold uppercase tracking-[.16em] text-[#87968a]">
+          Manage
+        </p>
+        <NavItem href="/#settings" label="Settings" icon="settings" />
+        <div className="mt-auto rounded-xl border border-white/10 bg-white/[.04] p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="size-2 rounded-full bg-[#aad58c]" />
+            <span className="text-xs font-medium text-[#e1e9e2]">Membership drive</span>
+          </div>
+          <p className="mb-3 text-[11px] leading-relaxed text-[#9ca99e]">
+            Annual membership renewals are open for 2026–27.
+          </p>
+          <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+            <div className="h-full w-[68%] rounded-full bg-[#b9dfa0]" />
+          </div>
+          <p className="mt-2 text-[10px] text-[#aab7ac]">68% renewed</p>
+        </div>
+        <div className="mt-5 flex items-center gap-3 border-t border-white/10 px-1 pt-5">
+          <div className="flex size-9 items-center justify-center rounded-full bg-[#e9c6a6] text-xs font-semibold text-[#573c29]">
+            TD
+          </div>
+          <div>
+            <p className="text-xs font-medium">Tanmay Deshmukh</p>
+            <p className="mt-0.5 text-[10px] text-[#9ca99e]">Administrator</p>
+          </div>
+        </div>
+      </aside>
+
+      <section className="lg:pl-[252px]">
+        <header className="sticky top-0 z-10 flex h-[70px] items-center justify-between border-b border-[#e9ece6] bg-[#fbfcfa]/95 px-5 backdrop-blur-md sm:px-8 lg:px-10">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-[#e7efdf] text-[#3d5941] lg:hidden">
+              <Icon name="camera" />
+            </div>
+            <div>
+              <p className="text-[11px] text-[#8b948c]">
+                Association / <span className="text-[#455248]">Members</span>
+              </p>
+              <p className="mt-0.5 text-sm font-semibold lg:hidden">Pune Camera Association</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              aria-label="Notifications"
+              className="relative flex size-9 items-center justify-center rounded-lg text-[#68736a] hover:bg-[#eef1eb]"
+            >
+              <Icon name="bell" />
+              <span className="absolute right-[8px] top-[7px] size-1.5 rounded-full bg-[#da8069] ring-2 ring-[#fbfcfa]" />
+            </button>
+            <div className="hidden h-7 w-px bg-[#e7ebe5] sm:block" />
+            <div className="hidden text-right sm:block">
+              <p className="text-[11px] font-medium">Sunday, October 19</p>
+              <p className="mt-0.5 text-[10px] text-[#8b948c]">2026</p>
+            </div>
+          </div>
+        </header>
+
+        <div className="mx-auto max-w-[1440px] px-5 pb-10 pt-8 sm:px-8 lg:px-10 lg:pt-9">
+          <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[.14em] text-[#7d8f78]">
+                Association directory
+              </p>
+              <h1 className="text-[28px] font-semibold tracking-[-.04em] text-[#1d2a21] sm:text-[32px]">
+                Members
+              </h1>
+              <p className="mt-1.5 text-[13px] text-[#7b857d]">
+                Manage your photography community and membership renewals.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button className="h-10 gap-2 rounded-lg border border-[#e0e6de] bg-white px-3.5 text-xs font-medium text-[#536256] shadow-sm hover:bg-[#f7f9f5]">
+                <Icon name="download" size={15} /> Export
+              </Button>
+              <Button
+                onClick={() => setShowAddForm(true)}
+                className="h-10 gap-2 rounded-lg bg-[#314c35] px-4 text-xs font-medium text-white shadow-sm hover:bg-[#263d2a]"
+              >
+                <Icon name="plus" size={16} /> Add member
+              </Button>
+            </div>
+          </div>
+
+          <div className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-4">
+            <Summary
+              title="Total members"
+              value="248"
+              note="Across all membership types"
+              icon="users"
+              tone="green"
+            />
+            <Summary
+              title="Active members"
+              value="214"
+              note="86% of total members"
+              icon="users"
+              tone="blue"
+            />
+            <Summary
+              title="Renewals due"
+              value="18"
+              note="Due in the next 30 days"
+              icon="calendar"
+              tone="yellow"
+            />
+            <Summary
+              title="Pending approval"
+              value="12"
+              note="Applications to review"
+              icon="ticket"
+              tone="peach"
+            />
+          </div>
+
+          <Card className="rounded-xl border-[#e8ece6] bg-white py-0 shadow-[0_2px_10px_rgba(30,45,32,.025)]">
+            <CardContent className="p-0">
+              <div className="flex flex-col justify-between gap-3 border-b border-[#edf0eb] px-4 pt-4 sm:flex-row sm:items-center sm:px-5">
+                <div className="flex gap-5 overflow-x-auto">
+                  {["All members", "Renewals due", "Pending approval"].map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`relative whitespace-nowrap pb-3 text-[11px] font-medium transition ${activeTab === tab ? "text-[#38553b]" : "text-[#8c968e] hover:text-[#465449]"}`}
+                    >
+                      {tab}
+                      {tab === "Pending approval" && (
+                        <span className="ml-1.5 rounded-full bg-[#f5eee0] px-1.5 py-0.5 text-[9px] text-[#987340]">
+                          12
+                        </span>
+                      )}
+                      {activeTab === tab && (
+                        <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[#55754c]" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <p className="pb-3 text-[10px] text-[#9aa39b]">
+                  Showing{" "}
+                  <span className="font-medium text-[#59645c]">{visibleMembers.length}</span> of 248
+                  members
+                </p>
+              </div>
+              <div className="flex flex-col gap-2.5 border-b border-[#edf0eb] p-4 sm:flex-row sm:items-center sm:px-5">
+                <label className="relative flex-1">
+                  <span className="sr-only">Search members</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#929c93]">
+                    <Icon name="search" size={15} />
+                  </span>
+                  <Input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    className="h-9 border-[#e7ebe5] bg-white pl-9 text-[11px] shadow-none placeholder:text-[#9da69e] focus-visible:ring-[#98b784]"
+                    placeholder="Search by name, email, phone or member ID..."
+                  />
+                </label>
+                <div className="flex gap-2">
+                  <label className="relative">
+                    <span className="sr-only">Filter by membership type</span>
+                    <select
+                      value={type}
+                      onChange={(event) => setType(event.target.value)}
+                      className="h-9 min-w-[132px] appearance-none rounded-md border border-[#e7ebe5] bg-white pl-3 pr-8 text-[10px] text-[#667168] outline-none focus:ring-2 focus:ring-[#98b784]"
+                    >
+                      <option>All types</option>
+                      <option>Annual</option>
+                      <option>Lifetime</option>
+                      <option>Student</option>
+                    </select>
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#829087]">
+                      ⌄
+                    </span>
+                  </label>
+                  <label className="relative">
+                    <span className="sr-only">Filter by status</span>
+                    <select
+                      value={status}
+                      onChange={(event) => setStatus(event.target.value)}
+                      className="h-9 min-w-[132px] appearance-none rounded-md border border-[#e7ebe5] bg-white pl-3 pr-8 text-[10px] text-[#667168] outline-none focus:ring-2 focus:ring-[#98b784]"
+                    >
+                      <option>All members</option>
+                      <option>Active</option>
+                      <option>Pending</option>
+                      <option>Expired</option>
+                    </select>
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#829087]">
+                      ⌄
+                    </span>
+                  </label>
+                  <Button
+                    aria-label="More filters"
+                    className="size-9 rounded-md border border-[#e7ebe5] bg-white text-[#68736a] hover:bg-[#f6f8f4]"
+                  >
+                    <Icon name="filter" size={16} />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[840px] text-left">
+                  <thead>
+                    <tr className="bg-[#fafbf9] text-[9px] font-medium uppercase tracking-[.1em] text-[#9aa39b]">
+                      <th className="px-5 py-3 font-medium">Member</th>
+                      <th className="px-3 py-3 font-medium">Member ID</th>
+                      <th className="px-3 py-3 font-medium">Membership</th>
+                      <th className="px-3 py-3 font-medium">Joined</th>
+                      <th className="px-3 py-3 font-medium">Renewal date</th>
+                      <th className="px-3 py-3 font-medium">Status</th>
+                      <th className="px-5 py-3 font-medium" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleMembers.map((member) => (
+                      <tr
+                        key={member.id}
+                        className="border-t border-[#f0f2ee] text-[10px] transition hover:bg-[#fbfcfa]"
+                      >
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-2.5">
+                            <Avatar label={member.avatar} tone={member.tone} />
+                            <div>
+                              <p className="whitespace-nowrap text-[11px] font-medium text-[#37443a]">
+                                {member.name}
+                              </p>
+                              <p className="mt-1 text-[9px] text-[#929c94]">{member.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3.5 font-medium text-[#657168]">{member.id}</td>
+                        <td className="px-3 py-3.5">
+                          <Badge
+                            variant="outline"
+                            className="rounded-md border-[#e8ece6] px-2 py-1 text-[9px] font-normal text-[#68736a]"
+                          >
+                            {member.type}
+                          </Badge>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-3.5 text-[#737f75]">
+                          {member.joined}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-3.5 text-[#737f75]">
+                          {member.expires}
+                        </td>
+                        <td className="px-3 py-3.5">
+                          <StatusBadge status={member.status} />
+                        </td>
+                        <td className="px-5 py-3.5 text-right">
+                          <button
+                            aria-label={`More options for ${member.name}`}
+                            className="rounded p-1 text-[#909a91] hover:bg-[#eef1eb]"
+                          >
+                            <Icon name="more" size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {visibleMembers.length === 0 && (
+                  <div className="px-5 py-16 text-center">
+                    <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-[#edf3e9] text-[#6d8562]">
+                      <Icon name="search" />
+                    </div>
+                    <p className="mt-3 text-sm font-medium text-[#405044]">No members found</p>
+                    <p className="mt-1 text-xs text-[#8c968e]">
+                      Try another search or change your filters.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setQuery("");
+                        setStatus("All members");
+                        setType("All types");
+                        setActiveTab("All members");
+                      }}
+                      className="mt-3 text-xs font-medium text-[#57754e]"
+                    >
+                      Clear filters
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col items-center justify-between gap-3 border-t border-[#edf0eb] px-5 py-3.5 sm:flex-row">
+                <p className="text-[10px] text-[#929c94]">
+                  Showing{" "}
+                  <span className="font-medium text-[#59645c]">
+                    {visibleMembers.length ? 1 : 0}–{visibleMembers.length}
+                  </span>{" "}
+                  of <span className="font-medium text-[#59645c]">{visibleMembers.length}</span>{" "}
+                  results
+                </p>
+                <div className="flex items-center gap-1">
+                  <button
+                    disabled
+                    className="h-7 rounded-md border border-[#e8ece6] px-2.5 text-[10px] text-[#a3aca4]"
+                  >
+                    Previous
+                  </button>
+                  <button className="size-7 rounded-md bg-[#314c35] text-[10px] font-medium text-white">
+                    1
+                  </button>
+                  <button className="size-7 rounded-md text-[10px] text-[#758077] hover:bg-[#f1f4ef]">
+                    2
+                  </button>
+                  <button className="size-7 rounded-md text-[10px] text-[#758077] hover:bg-[#f1f4ef]">
+                    3
+                  </button>
+                  <span className="px-1 text-[10px] text-[#9aa39b]">…</span>
+                  <button className="size-7 rounded-md text-[10px] text-[#758077] hover:bg-[#f1f4ef]">
+                    25
+                  </button>
+                  <button className="h-7 rounded-md border border-[#e8ece6] px-2.5 text-[10px] text-[#59645c] hover:bg-[#f6f8f4]">
+                    Next
+                  </button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <footer className="mt-7 flex flex-col justify-between gap-1 border-t border-[#e8ece6] pt-4 text-[9px] text-[#9ba49c] sm:flex-row">
+            <span>© 2026 Pune Camera Photography Association</span>
+            <span>
+              Made for the love of photography <span className="text-[#bc806c]">♥</span>
+            </span>
+          </footer>
+        </div>
+      </section>
+
+      {showAddForm && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-[#142019]/40 p-4 backdrop-blur-[2px]"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setShowAddForm(false);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-member-title"
+            className="w-full max-w-[440px] rounded-2xl border border-[#e7ebe5] bg-white p-6 shadow-2xl"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[.13em] text-[#78906f]">
+                  Member directory
+                </p>
+                <h2 id="add-member-title" className="mt-1 text-lg font-semibold tracking-tight">
+                  Add a new member
+                </h2>
+                <p className="mt-1 text-xs text-[#858f87]">
+                  Create a profile and review it before approval.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowAddForm(false)}
+                aria-label="Close"
+                className="rounded-md px-2 py-1 text-lg leading-none text-[#859087] hover:bg-[#f2f4f0]"
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={addMember} className="mt-5 space-y-4">
+              <label className="block text-[11px] font-medium text-[#556158]">
+                Full name
+                <Input
+                  required
+                  value={newName}
+                  onChange={(event) => setNewName(event.target.value)}
+                  className="mt-1.5 h-10 text-xs"
+                  placeholder="e.g. Samira Joshi"
+                />
+              </label>
+              <label className="block text-[11px] font-medium text-[#556158]">
+                Email address
+                <Input
+                  required
+                  type="email"
+                  value={newEmail}
+                  onChange={(event) => setNewEmail(event.target.value)}
+                  className="mt-1.5 h-10 text-xs"
+                  placeholder="name@example.com"
+                />
+              </label>
+              <div className="flex items-center justify-between border-t border-[#edf0eb] pt-4">
+                <p className="text-[10px] text-[#909990]">New applications start as pending.</p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setShowAddForm(false)}
+                    className="h-9 rounded-lg border border-[#e4e9e2] bg-white px-3 text-xs text-[#5f6b62] hover:bg-[#f7f9f5]"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="h-9 rounded-lg bg-[#314c35] px-3.5 text-xs text-white hover:bg-[#263d2a]"
+                  >
+                    Create member
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}
+
+function NavItem({
+  href,
+  label,
+  icon,
+  count,
+  active = false,
+}: {
+  href: string;
+  label: string;
+  icon: string;
+  count?: string;
+  active?: boolean;
+}) {
+  return (
+    <a
+      href={href}
+      className={`flex h-11 items-center gap-3 rounded-lg px-3 text-[13px] transition ${active ? "bg-[#2c3a30] font-medium text-[#e3f2d9]" : "text-[#bdc8bf] hover:bg-[#253229] hover:text-white"}`}
+    >
+      <Icon name={icon} />
+      <span className="flex-1">{label}</span>
+      {count && (
+        <span className="rounded-md bg-white/10 px-2 py-0.5 text-[10px] text-[#d2dcd4]">
+          {count}
+        </span>
+      )}
+    </a>
+  );
+}
+
+function Summary({
+  title,
+  value,
+  note,
+  icon,
+  tone,
+}: {
+  title: string;
+  value: string;
+  note: string;
+  icon: string;
+  tone: string;
+}) {
+  const tones: Record<string, string> = {
+    green: "bg-[#edf4e8] text-[#69875d]",
+    blue: "bg-[#edf1f6] text-[#6c8098]",
+    yellow: "bg-[#f7f1df] text-[#aa8c48]",
+    peach: "bg-[#fbf0e7] text-[#b9835c]",
+  };
+  return (
+    <Card className="rounded-xl border-[#e8ece6] bg-white py-0 shadow-[0_2px_10px_rgba(30,45,32,.025)]">
+      <CardContent className="p-4 sm:p-[18px]">
+        <div className="flex items-center justify-between">
+          <p className="text-[11px] font-medium text-[#818b82]">{title}</p>
+          <span className={`flex size-8 items-center justify-center rounded-lg ${tones[tone]}`}>
+            <Icon name={icon} size={16} />
+          </span>
+        </div>
+        <p className="mt-2 text-[25px] font-semibold tracking-[-.045em] text-[#26342a]">{value}</p>
+        <p className="mt-1 text-[9px] text-[#929b93]">{note}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function Avatar({ label, tone }: { label: string; tone: string }) {
+  const tones: Record<string, string> = {
+    sage: "bg-[#e0ebd9] text-[#54704b]",
+    peach: "bg-[#f5e3d7] text-[#96684b]",
+    blue: "bg-[#e0e9f1] text-[#5e758c]",
+    lavender: "bg-[#eee5f2] text-[#82678e]",
+    rose: "bg-[#f4e2e5] text-[#986b75]",
+    yellow: "bg-[#f3edda] text-[#927d3d]",
+  };
+  return (
+    <span
+      className={`flex size-9 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${tones[tone] ?? tones.sage}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function StatusBadge({ status }: { status: MemberStatus }) {
+  const styles: Record<MemberStatus, string> = {
+    Active: "bg-[#eaf3e4] text-[#557249]",
+    Pending: "bg-[#fbf0dd] text-[#9a7134]",
+    Expired: "bg-[#f7e8e5] text-[#a45f54]",
+  };
+  const dots: Record<MemberStatus, string> = {
+    Active: "bg-[#7c9c6c]",
+    Pending: "bg-[#c99b50]",
+    Expired: "bg-[#c7796c]",
+  };
+  return (
+    <Badge
+      className={`border-0 px-2 py-1 text-[9px] font-medium hover:opacity-90 ${styles[status]}`}
+    >
+      <span className={`mr-1.5 size-1.5 rounded-full ${dots[status]}`} />
+      {status}
+    </Badge>
+  );
+}

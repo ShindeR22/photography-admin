@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 
 type Registration = {
   id: string;
+  number: string;
   name: string;
   email: string;
   memberId: string;
@@ -21,138 +22,49 @@ type Registration = {
   tone: string;
 };
 
-const initialRegistrations: Registration[] = [
-  {
-    id: "REG-0108",
-    name: "Mira Kulkarni",
-    email: "mira.kulkarni@gmail.com",
-    memberId: "PCA-0247",
-    workshop: "The art of street photography",
-    date: "17 Oct, 2026",
-    amount: 1200,
-    payment: "Paid",
-    attendance: "Registered",
-    avatar: "MK",
-    tone: "peach",
-  },
-  {
-    id: "REG-0107",
-    name: "Aarav Deshmukh",
-    email: "aarav.deshmukh@gmail.com",
-    memberId: "PCA-0248",
-    workshop: "The art of street photography",
-    date: "17 Oct, 2026",
-    amount: 1200,
-    payment: "Paid",
-    attendance: "Registered",
-    avatar: "AD",
-    tone: "sage",
-  },
-  {
-    id: "REG-0106",
-    name: "Rohan Patil",
-    email: "rohan.patil@gmail.com",
-    memberId: "PCA-0246",
-    workshop: "The art of street photography",
-    date: "16 Oct, 2026",
-    amount: 1200,
-    payment: "Pending",
-    attendance: "Registered",
-    avatar: "RP",
-    tone: "blue",
-  },
-  {
-    id: "REG-0105",
-    name: "Ananya Shah",
-    email: "ananya.shah@gmail.com",
-    memberId: "PCA-0245",
-    workshop: "Portraits in natural light",
-    date: "15 Oct, 2026",
-    amount: 1500,
-    payment: "Paid",
-    attendance: "Registered",
-    avatar: "AS",
-    tone: "lavender",
-  },
-  {
-    id: "REG-0104",
-    name: "Neha Shah",
-    email: "neha.shah@gmail.com",
-    memberId: "PCA-0244",
-    workshop: "The art of street photography",
-    date: "14 Oct, 2026",
-    amount: 1200,
-    payment: "Paid",
-    attendance: "Waitlist",
-    avatar: "NS",
-    tone: "rose",
-  },
-  {
-    id: "REG-0103",
-    name: "Kabir Joshi",
-    email: "kabir.joshi@gmail.com",
-    memberId: "PCA-0243",
-    workshop: "Portraits in natural light",
-    date: "12 Oct, 2026",
-    amount: 1500,
-    payment: "Pending",
-    attendance: "Registered",
-    avatar: "KJ",
-    tone: "yellow",
-  },
-  {
-    id: "REG-0102",
-    name: "Ishita Rao",
-    email: "ishita.rao@gmail.com",
-    memberId: "PCA-0242",
-    workshop: "Mastering manual mode",
-    date: "02 Oct, 2026",
-    amount: 800,
-    payment: "Refunded",
-    attendance: "Attended",
-    avatar: "IR",
-    tone: "blue",
-  },
-  {
-    id: "REG-0101",
-    name: "Devika Nair",
-    email: "devika.nair@gmail.com",
-    memberId: "PCA-0241",
-    workshop: "Mastering manual mode",
-    date: "01 Oct, 2026",
-    amount: 800,
-    payment: "Paid",
-    attendance: "Attended",
-    avatar: "DN",
-    tone: "peach",
-  },
-  {
-    id: "REG-0100",
-    name: "Siddharth Mehta",
-    email: "siddharth.mehta@gmail.com",
-    memberId: "PCA-0240",
-    workshop: "The art of street photography",
-    date: "29 Sep, 2026",
-    amount: 1200,
-    payment: "Paid",
-    attendance: "Registered",
-    avatar: "SM",
-    tone: "sage",
-  },
-  {
-    id: "REG-0099",
-    name: "Priya Kulkarni",
-    email: "priya.kulkarni@gmail.com",
-    memberId: "PCA-0239",
-    workshop: "Portraits in natural light",
-    date: "28 Sep, 2026",
-    amount: 1500,
-    payment: "Pending",
-    attendance: "Registered",
-    avatar: "PK",
-    tone: "lavender",
-  },
-];
+type RegistrationRecord = {
+  id: string;
+  registrationNumber: string;
+  memberNumber: string;
+  memberName: string;
+  memberEmail: string;
+  workshopTitle: string;
+  registeredAt: string;
+  amount: number;
+  paymentStatus: Registration["payment"];
+  attendanceStatus: Registration["attendance"];
+};
+type MemberOption = { id: string; memberNumber: string; name: string };
+type WorkshopOption = { id: string; title: string };
+
+function registrationFromRecord(record: RegistrationRecord, index: number): Registration {
+  const initials = record.memberName
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+  const tones = ["sage", "peach", "blue", "lavender", "rose", "yellow"];
+
+  return {
+    id: record.id,
+    number: record.registrationNumber,
+    name: record.memberName,
+    email: record.memberEmail,
+    memberId: record.memberNumber,
+    workshop: record.workshopTitle,
+    date: new Date(record.registeredAt).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }),
+    amount: record.amount,
+    payment: record.paymentStatus,
+    attendance: record.attendanceStatus,
+    avatar: initials,
+    tone: tones[index % tones.length],
+  };
+}
 
 function Icon({ name, size = 18 }: { name: string; size?: number }) {
   const paths: Record<string, ReactNode> = {
@@ -245,14 +157,68 @@ function Icon({ name, size = 18 }: { name: string; size?: number }) {
 }
 
 export default function RegistrationsDirectory() {
-  const [registrations, setRegistrations] = useState(initialRegistrations);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [members, setMembers] = useState<MemberOption[]>([]);
+  const [workshopOptions, setWorkshopOptions] = useState<WorkshopOption[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedMember, setSelectedMember] = useState("");
+  const [selectedWorkshop, setSelectedWorkshop] = useState("");
   const [query, setQuery] = useState("");
   const [workshopFilter, setWorkshopFilter] = useState("All workshops");
   const [paymentFilter, setPaymentFilter] = useState("All payments");
   const [tab, setTab] = useState("All registrations");
   const [notice, setNotice] = useState("");
 
-  const workshops = Array.from(new Set(registrations.map((registration) => registration.workshop)));
+  useEffect(() => {
+    let isActive = true;
+    Promise.all(["/api/registrations", "/api/members", "/api/workshops"].map((url) => fetch(url)))
+      .then(async ([registrationsResponse, membersResponse, workshopsResponse]) => {
+        const [registrationData, memberData, workshopData] = await Promise.all([
+          registrationsResponse.json(),
+          membersResponse.json(),
+          workshopsResponse.json(),
+        ]);
+        const responses = [registrationsResponse, membersResponse, workshopsResponse];
+        const results = [registrationData, memberData, workshopData];
+        const failedIndex = responses.findIndex((response) => !response.ok);
+        if (failedIndex !== -1) {
+          throw new Error(results[failedIndex].error || "Could not load registration data.");
+        }
+        if (isActive) {
+          setRegistrations(
+            registrationData.map((record: RegistrationRecord, index: number) =>
+              registrationFromRecord(record, index),
+            ),
+          );
+          setMembers(memberData);
+          setWorkshopOptions(workshopData);
+        }
+      })
+      .catch((error: unknown) => {
+        if (isActive)
+          setLoadError(
+            error instanceof Error ? error.message : "Could not load registration data.",
+          );
+      })
+      .finally(() => {
+        if (isActive) setIsLoading(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const workshops = Array.from(
+    new Set([
+      ...workshopOptions.map((workshop) => workshop.title),
+      ...registrations.map((registration) => registration.workshop),
+    ]),
+  );
   const filtered = useMemo(
     () =>
       registrations.filter((registration) => {
@@ -262,7 +228,7 @@ export default function RegistrationsDirectory() {
           [
             registration.name,
             registration.email,
-            registration.id,
+            registration.number,
             registration.memberId,
             registration.workshop,
           ].some((value) => value.toLowerCase().includes(needle));
@@ -279,28 +245,61 @@ export default function RegistrationsDirectory() {
     [registrations, query, workshopFilter, paymentFilter, tab],
   );
 
-  function updatePayment(id: string) {
+  async function updateRegistration(id: string, data: object, successMessage: string) {
+    const response = await fetch(`/api/registrations/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      setNotice(result.error || "Could not update registration.");
+      return;
+    }
     setRegistrations((current) =>
       current.map((registration) =>
-        registration.id === id ? { ...registration, payment: "Paid" } : registration,
+        registration.id === id
+          ? {
+              ...registration,
+              payment: result.paymentStatus,
+              attendance: result.attendanceStatus,
+            }
+          : registration,
       ),
     );
-    setNotice("Payment marked as received");
+    setNotice(successMessage);
     window.setTimeout(() => setNotice(""), 2600);
   }
 
-  function markAttendance(id: string) {
-    setRegistrations((current) =>
-      current.map((registration) =>
-        registration.id === id ? { ...registration, attendance: "Attended" } : registration,
-      ),
-    );
-    setNotice("Attendance marked");
-    window.setTimeout(() => setNotice(""), 2600);
+  async function createRegistration(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (isSubmitting) return;
+    setSubmitError("");
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/registrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId: selectedMember, workshopId: selectedWorkshop }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Could not save registration.");
+      setRegistrations((current) => [registrationFromRecord(result, 0), ...current]);
+      setSelectedMember("");
+      setSelectedWorkshop("");
+      setShowCreateForm(false);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Could not save registration.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const pendingPayments = registrations.filter(
     (registration) => registration.payment === "Pending",
+  ).length;
+  const paidRegistrations = registrations.filter(
+    (registration) => registration.payment === "Paid",
   ).length;
   const totalRevenue = registrations
     .filter((registration) => registration.payment === "Paid")
@@ -325,9 +324,15 @@ export default function RegistrationsDirectory() {
         </p>
         <nav className="space-y-1" aria-label="Main navigation">
           <NavItem href="/" label="Overview" icon="grid" />
-          <NavItem href="/members" label="Members" icon="users" count="248" />
+          <NavItem href="/members" label="Members" icon="users" />
           <NavItem href="/workshops" label="Workshops" icon="calendar" />
-          <NavItem href="/registrations" label="Registrations" icon="ticket" count="12" active />
+          <NavItem
+            href="/registrations"
+            label="Registrations"
+            icon="ticket"
+            count={String(registrations.length)}
+            active
+          />
           <NavItem href="/#accounts" label="Accounts" icon="wallet" />
         </nav>
         <p className="mb-3 mt-9 px-3 text-[10px] font-semibold uppercase tracking-[.16em] text-[#87968a]">
@@ -388,22 +393,25 @@ export default function RegistrationsDirectory() {
                 Track workshop sign-ups, payments and attendance.
               </p>
             </div>
-            <Button className="h-10 w-fit gap-2 rounded-lg border border-[#e0e6de] bg-white px-3.5 text-xs font-medium text-[#536256] shadow-sm hover:bg-[#f7f9f5]">
-              <Icon name="download" size={15} /> Export list
+            <Button
+              onClick={() => setShowCreateForm(true)}
+              className="h-10 w-fit gap-2 rounded-lg bg-[#314c35] px-3.5 text-xs font-medium text-white shadow-sm hover:bg-[#263d2a]"
+            >
+              <Icon name="plus" size={15} /> Create registration
             </Button>
           </div>
 
           <div className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-4">
             <Summary
               title="Total registrations"
-              value="108"
+              value={String(registrations.length)}
               note="Across all workshops"
               icon="ticket"
               tone="green"
             />
             <Summary
               title="Paid registrations"
-              value="84"
+              value={String(paidRegistrations)}
               note="Payments confirmed"
               icon="check"
               tone="blue"
@@ -521,7 +529,7 @@ export default function RegistrationsDirectory() {
                                 {registration.name}
                               </p>
                               <p className="mt-1 text-[9px] text-[#929c94]">
-                                {registration.memberId} · {registration.id}
+                                {registration.memberId} · {registration.number}
                               </p>
                             </div>
                           </div>
@@ -546,14 +554,26 @@ export default function RegistrationsDirectory() {
                         <td className="px-5 py-3.5">
                           {registration.payment === "Pending" ? (
                             <button
-                              onClick={() => updatePayment(registration.id)}
+                              onClick={() =>
+                                void updateRegistration(
+                                  registration.id,
+                                  { paymentStatus: "Paid" },
+                                  "Payment marked as received",
+                                )
+                              }
                               className="whitespace-nowrap rounded-md border border-[#e3e9df] bg-white px-2.5 py-1.5 text-[9px] font-medium text-[#55734b] hover:bg-[#f1f6ed]"
                             >
                               Mark paid
                             </button>
                           ) : registration.attendance === "Registered" ? (
                             <button
-                              onClick={() => markAttendance(registration.id)}
+                              onClick={() =>
+                                void updateRegistration(
+                                  registration.id,
+                                  { attendanceStatus: "Attended" },
+                                  "Attendance marked",
+                                )
+                              }
                               className="whitespace-nowrap rounded-md px-2.5 py-1.5 text-[9px] font-medium text-[#607451] hover:bg-[#f1f5ee]"
                             >
                               Mark attended
@@ -566,7 +586,17 @@ export default function RegistrationsDirectory() {
                     ))}
                   </tbody>
                 </table>
-                {filtered.length === 0 && (
+                {isLoading && (
+                  <p className="px-5 py-14 text-center text-xs text-[#8c968e]">
+                    Loading registrations from the database…
+                  </p>
+                )}
+                {!isLoading && loadError && (
+                  <p role="alert" className="px-5 py-14 text-center text-xs text-red-600">
+                    {loadError}
+                  </p>
+                )}
+                {!isLoading && !loadError && filtered.length === 0 && (
                   <div className="px-5 py-14 text-center">
                     <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-[#edf3e9] text-[#6d8562]">
                       <Icon name="search" />
@@ -599,41 +629,110 @@ export default function RegistrationsDirectory() {
                   </span>{" "}
                   of <span className="font-medium text-[#59645c]">{filtered.length}</span> results
                 </p>
-                <div className="flex items-center gap-1">
-                  <button
-                    disabled
-                    className="h-7 rounded-md border border-[#e8ece6] px-2.5 text-[10px] text-[#a3aca4]"
-                  >
-                    Previous
-                  </button>
-                  <button className="size-7 rounded-md bg-[#314c35] text-[10px] font-medium text-white">
-                    1
-                  </button>
-                  <button className="size-7 rounded-md text-[10px] text-[#758077] hover:bg-[#f1f4ef]">
-                    2
-                  </button>
-                  <button className="size-7 rounded-md text-[10px] text-[#758077] hover:bg-[#f1f4ef]">
-                    3
-                  </button>
-                  <span className="px-1 text-[10px] text-[#9aa39b]">…</span>
-                  <button className="size-7 rounded-md text-[10px] text-[#758077] hover:bg-[#f1f4ef]">
-                    11
-                  </button>
-                  <button className="h-7 rounded-md border border-[#e8ece6] px-2.5 text-[10px] text-[#59645c] hover:bg-[#f6f8f4]">
-                    Next
-                  </button>
-                </div>
+                <span className="text-[10px] text-[#929c94]">Registrations from database</span>
               </div>
             </CardContent>
           </Card>
           <footer className="mt-7 flex flex-col justify-between gap-1 border-t border-[#e8ece6] pt-4 text-[9px] text-[#9ba49c] sm:flex-row">
-            <span>© 2026 Pune Camera Photography Association</span>
+            <span>Pune Camera Photography Association</span>
             <span>
               Made for the love of photography <span className="text-[#bc806c]">♥</span>
             </span>
           </footer>
         </div>
       </section>
+      {showCreateForm && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-[#142019]/40 p-4 backdrop-blur-[2px]"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setShowCreateForm(false);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-registration-title"
+            className="w-full max-w-[460px] rounded-2xl border border-[#e7ebe5] bg-white p-6 shadow-2xl"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[.13em] text-[#78906f]">
+                  Workshop attendance
+                </p>
+                <h2 id="create-registration-title" className="mt-1 text-lg font-semibold">
+                  Create registration
+                </h2>
+              </div>
+              <button
+                onClick={() => setShowCreateForm(false)}
+                aria-label="Close"
+                className="rounded-md px-2 py-1 text-lg leading-none text-[#859087] hover:bg-[#f2f4f0]"
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={createRegistration} className="mt-5 space-y-4">
+              <label className="block text-[11px] font-medium text-[#556158]">
+                Member
+                <select
+                  required
+                  value={selectedMember}
+                  onChange={(event) => setSelectedMember(event.target.value)}
+                  className="mt-1.5 h-10 w-full rounded-md border border-[#e7ebe5] bg-white px-3 text-xs"
+                >
+                  <option value="">Select a member</option>
+                  {members.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.name} · {member.memberNumber}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block text-[11px] font-medium text-[#556158]">
+                Workshop
+                <select
+                  required
+                  value={selectedWorkshop}
+                  onChange={(event) => setSelectedWorkshop(event.target.value)}
+                  className="mt-1.5 h-10 w-full rounded-md border border-[#e7ebe5] bg-white px-3 text-xs"
+                >
+                  <option value="">Select a workshop</option>
+                  {workshopOptions.map((workshop) => (
+                    <option key={workshop.id} value={workshop.id}>
+                      {workshop.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {(!members.length || !workshopOptions.length) && (
+                <p className="text-xs text-[#8c968e]">
+                  Add at least one member and one workshop before creating a registration.
+                </p>
+              )}
+              {submitError && (
+                <p role="alert" className="text-xs text-red-600">
+                  {submitError}
+                </p>
+              )}
+              <div className="flex justify-end gap-2 border-t border-[#edf0eb] pt-4">
+                <Button
+                  onClick={() => setShowCreateForm(false)}
+                  className="h-9 rounded-lg border border-[#e4e9e2] bg-white px-3 text-xs text-[#5f6b62]"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !members.length || !workshopOptions.length}
+                  className="h-9 rounded-lg bg-[#314c35] px-3.5 text-xs text-white"
+                >
+                  {isSubmitting ? "Saving…" : "Create registration"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {notice && (
         <div
           role="status"

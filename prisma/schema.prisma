@@ -8,28 +8,47 @@ datasource db {
 }
 
 model Member {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  memberNumber   String   @unique
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  memberNumber   String    @unique
   name           String
-  email          String   @unique
-  phone          String?
-  membershipType String
-  joinedAt       DateTime @default(now())
+  email          String    @unique
+  phone          String    @default("")
+  membershipType String    @default("Annual")
+  joinedAt       DateTime  @default(now())
   expiresAt      DateTime?
-  status         String   @default("Pending")
+  status         String    @default("Pending")
+
+  @@map("members")
 }
 
 model Workshop {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  title          String
-  date           DateTime
-  venue          String
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  title           String
+  date            DateTime
+  venue           String
   registrationFee Float
-  description    String
-  mentorName     String
-  time           String
-  status         String   @default("Planning")
-  createdAt      DateTime @default(now())
+  description     String
+  mentorName      String
+  time            String
+  status          String   @default("Planning")
+  createdAt       DateTime @default(now())
 
   @@map("workshops")
+}
+
+model Registration {
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  registrationNumber String   @unique
+  memberId           String   @db.ObjectId
+  memberNumber       String
+  memberName         String
+  memberEmail        String
+  workshopId         String   @db.ObjectId
+  workshopTitle      String
+  registeredAt       DateTime @default(now())
+  amount             Float
+  paymentStatus      String   @default("Pending")
+  attendanceStatus   String   @default("Registered")
+
+  @@map("registrations")
 }

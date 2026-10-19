@@ -311,7 +311,7 @@ export default function WorkshopsDirectory() {
         </p>
         <nav className="space-y-1" aria-label="Main navigation">
           <NavItem href="/" label="Overview" icon="grid" />
-          <NavItem href="/members" label="Members" icon="users" count="248" />
+          <NavItem href="/members" label="Members" icon="users" />
           <NavItem
             href="/workshops"
             label="Workshops"
@@ -595,7 +595,7 @@ export default function WorkshopsDirectory() {
             </CardContent>
           </Card>
           <footer className="mt-7 flex flex-col justify-between gap-1 border-t border-[#e8ece6] pt-4 text-[9px] text-[#9ba49c] sm:flex-row">
-            <span>© 2026 Pune Camera Photography Association</span>
+            <span>Pune Camera Photography Association</span>
             <span>
               Made for the love of photography <span className="text-[#bc806c]">♥</span>
             </span>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,128 +21,49 @@ type Member = {
   tone: string;
 };
 
-const initialMembers: Member[] = [
-  {
-    id: "PCA-0248",
-    name: "Aarav Deshmukh",
-    email: "aarav.deshmukh@gmail.com",
-    phone: "+91 98220 45812",
-    type: "Lifetime",
-    joined: "18 Oct, 2026",
-    expires: "Lifetime",
-    status: "Active",
-    avatar: "AD",
-    tone: "sage",
-  },
-  {
-    id: "PCA-0247",
-    name: "Mira Kulkarni",
-    email: "mira.kulkarni@gmail.com",
-    phone: "+91 98230 11648",
-    type: "Annual",
-    joined: "17 Oct, 2026",
-    expires: "17 Oct, 2027",
-    status: "Active",
-    avatar: "MK",
-    tone: "peach",
-  },
-  {
-    id: "PCA-0246",
-    name: "Rohan Patil",
-    email: "rohan.patil@gmail.com",
-    phone: "+91 97654 82731",
-    type: "Annual",
-    joined: "16 Oct, 2026",
-    expires: "16 Oct, 2027",
-    status: "Pending",
-    avatar: "RP",
-    tone: "blue",
-  },
-  {
-    id: "PCA-0245",
-    name: "Ananya Shah",
-    email: "ananya.shah@gmail.com",
-    phone: "+91 98224 10576",
-    type: "Student",
-    joined: "15 Oct, 2026",
-    expires: "15 Oct, 2027",
-    status: "Active",
-    avatar: "AS",
-    tone: "lavender",
-  },
-  {
-    id: "PCA-0244",
-    name: "Neha Shah",
-    email: "neha.shah@gmail.com",
-    phone: "+91 98900 25143",
-    type: "Annual",
-    joined: "14 Oct, 2026",
-    expires: "14 Oct, 2027",
-    status: "Active",
-    avatar: "NS",
-    tone: "rose",
-  },
-  {
-    id: "PCA-0243",
-    name: "Kabir Joshi",
-    email: "kabir.joshi@gmail.com",
-    phone: "+91 97632 74105",
-    type: "Student",
-    joined: "12 Oct, 2026",
-    expires: "12 Oct, 2027",
-    status: "Pending",
-    avatar: "KJ",
-    tone: "yellow",
-  },
-  {
-    id: "PCA-0242",
-    name: "Ishita Rao",
-    email: "ishita.rao@gmail.com",
-    phone: "+91 98221 30642",
-    type: "Annual",
-    joined: "08 Oct, 2026",
-    expires: "08 Oct, 2026",
-    status: "Expired",
-    avatar: "IR",
-    tone: "blue",
-  },
-  {
-    id: "PCA-0241",
-    name: "Devika Nair",
-    email: "devika.nair@gmail.com",
-    phone: "+91 90110 56823",
-    type: "Lifetime",
-    joined: "05 Oct, 2026",
-    expires: "Lifetime",
-    status: "Active",
-    avatar: "DN",
-    tone: "peach",
-  },
-  {
-    id: "PCA-0240",
-    name: "Siddharth Mehta",
-    email: "siddharth.mehta@gmail.com",
-    phone: "+91 98901 77520",
-    type: "Annual",
-    joined: "02 Oct, 2026",
-    expires: "02 Oct, 2027",
-    status: "Active",
-    avatar: "SM",
-    tone: "sage",
-  },
-  {
-    id: "PCA-0239",
-    name: "Priya Kulkarni",
-    email: "priya.kulkarni@gmail.com",
-    phone: "+91 98226 11984",
-    type: "Student",
-    joined: "29 Sep, 2026",
-    expires: "29 Sep, 2027",
-    status: "Active",
-    avatar: "PK",
-    tone: "lavender",
-  },
-];
+type MemberRecord = {
+  id: string;
+  memberNumber: string;
+  name: string;
+  email: string;
+  phone: string;
+  membershipType: Member["type"];
+  joinedAt: string;
+  expiresAt: string | null;
+  status: MemberStatus;
+};
+
+function formatMemberDate(value: string | null) {
+  if (!value) return "Lifetime";
+  return new Date(value).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function memberFromRecord(record: MemberRecord, index: number): Member {
+  const initials = record.name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+  const tones = ["sage", "peach", "blue", "lavender", "rose", "yellow"];
+
+  return {
+    id: record.memberNumber,
+    name: record.name,
+    email: record.email,
+    phone: record.phone || "—",
+    type: record.membershipType,
+    joined: formatMemberDate(record.joinedAt),
+    expires: formatMemberDate(record.expiresAt),
+    status: record.status,
+    avatar: initials,
+    tone: tones[index % tones.length],
+  };
+}
 
 function Icon({ name, size = 18 }: { name: string; size?: number }) {
   const shapes: Record<string, ReactNode> = {
@@ -244,7 +165,11 @@ function Icon({ name, size = 18 }: { name: string; size?: number }) {
 }
 
 export default function MembersDirectory() {
-  const [members, setMembers] = useState(initialMembers);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("All members");
   const [type, setType] = useState("All types");
@@ -252,6 +177,31 @@ export default function MembersDirectory() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
+
+  useEffect(() => {
+    let isActive = true;
+    fetch("/api/members")
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Could not load members.");
+        if (isActive) {
+          setMembers(
+            result.map((record: MemberRecord, index: number) => memberFromRecord(record, index)),
+          );
+        }
+      })
+      .catch((error: unknown) => {
+        if (isActive)
+          setLoadError(error instanceof Error ? error.message : "Could not load members.");
+      })
+      .finally(() => {
+        if (isActive) setIsLoading(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const visibleMembers = useMemo(
     () =>
@@ -274,39 +224,37 @@ export default function MembersDirectory() {
     [members, query, status, type, activeTab],
   );
 
-  function addMember(event: FormEvent<HTMLFormElement>) {
+  async function addMember(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const name = newName.trim();
-    if (!name || !newEmail.trim()) return;
-    const initials = name
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((part) => part[0])
-      .join("")
-      .toUpperCase();
-    setMembers((current) => [
-      {
-        id: `PCA-${String(248 + current.length - initialMembers.length + 1).padStart(4, "0")}`,
-        name,
-        email: newEmail.trim(),
-        phone: "—",
-        type: "Annual",
-        joined: "Today",
-        expires: "19 Oct, 2027",
-        status: "Pending",
-        avatar: initials,
-        tone: "sage",
-      },
-      ...current,
-    ]);
-    setQuery("");
-    setStatus("All members");
-    setType("All types");
-    setActiveTab("All members");
-    setNewName("");
-    setNewEmail("");
-    setShowAddForm(false);
+    if (isSubmitting) return;
+    setSubmitError("");
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName, email: newEmail }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Could not save the member.");
+      setMembers((current) => [memberFromRecord(result as MemberRecord, 0), ...current]);
+      setQuery("");
+      setStatus("All members");
+      setType("All types");
+      setActiveTab("All members");
+      setNewName("");
+      setNewEmail("");
+      setShowAddForm(false);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Could not save the member.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
+
+  const activeCount = members.filter((member) => member.status === "Active").length;
+  const expiredCount = members.filter((member) => member.status === "Expired").length;
+  const pendingCount = members.filter((member) => member.status === "Pending").length;
 
   return (
     <main className="min-h-screen bg-[#f7f8f5] text-[#1c2720]">
@@ -327,9 +275,15 @@ export default function MembersDirectory() {
         </p>
         <nav className="space-y-1" aria-label="Main navigation">
           <NavItem href="/" label="Overview" icon="grid" />
-          <NavItem href="/members" label="Members" icon="users" count="248" active />
+          <NavItem
+            href="/members"
+            label="Members"
+            icon="users"
+            count={String(members.length)}
+            active
+          />
           <NavItem href="/workshops" label="Workshops" icon="calendar" />
-          <NavItem href="/registrations" label="Registrations" icon="ticket" count="12" />
+          <NavItem href="/registrations" label="Registrations" icon="ticket" />
           <NavItem href="/#accounts" label="Accounts" icon="wallet" />
         </nav>
         <p className="mb-3 mt-9 px-3 text-[10px] font-semibold uppercase tracking-[.16em] text-[#87968a]">
@@ -342,12 +296,17 @@ export default function MembersDirectory() {
             <span className="text-xs font-medium text-[#e1e9e2]">Membership drive</span>
           </div>
           <p className="mb-3 text-[11px] leading-relaxed text-[#9ca99e]">
-            Annual membership renewals are open for 2026–27.
+            {pendingCount} membership applications need review.
           </p>
           <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-            <div className="h-full w-[68%] rounded-full bg-[#b9dfa0]" />
+            <div
+              className="h-full rounded-full bg-[#b9dfa0]"
+              style={{ width: `${members.length ? (activeCount / members.length) * 100 : 0}%` }}
+            />
           </div>
-          <p className="mt-2 text-[10px] text-[#aab7ac]">68% renewed</p>
+          <p className="mt-2 text-[10px] text-[#aab7ac]">
+            {activeCount} of {members.length} active
+          </p>
         </div>
         <div className="mt-5 flex items-center gap-3 border-t border-white/10 px-1 pt-5">
           <div className="flex size-9 items-center justify-center rounded-full bg-[#e9c6a6] text-xs font-semibold text-[#573c29]">
@@ -382,10 +341,6 @@ export default function MembersDirectory() {
               <span className="absolute right-[8px] top-[7px] size-1.5 rounded-full bg-[#da8069] ring-2 ring-[#fbfcfa]" />
             </button>
             <div className="hidden h-7 w-px bg-[#e7ebe5] sm:block" />
-            <div className="hidden text-right sm:block">
-              <p className="text-[11px] font-medium">Sunday, October 19</p>
-              <p className="mt-0.5 text-[10px] text-[#8b948c]">2026</p>
-            </div>
           </div>
         </header>
 
@@ -418,28 +373,28 @@ export default function MembersDirectory() {
           <div className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-4">
             <Summary
               title="Total members"
-              value="248"
+              value={String(members.length)}
               note="Across all membership types"
               icon="users"
               tone="green"
             />
             <Summary
               title="Active members"
-              value="214"
-              note="86% of total members"
+              value={String(activeCount)}
+              note="Members with active status"
               icon="users"
               tone="blue"
             />
             <Summary
               title="Renewals due"
-              value="18"
-              note="Due in the next 30 days"
+              value={String(expiredCount)}
+              note="Members marked expired"
               icon="calendar"
               tone="yellow"
             />
             <Summary
               title="Pending approval"
-              value="12"
+              value={String(pendingCount)}
               note="Applications to review"
               icon="ticket"
               tone="peach"
@@ -459,7 +414,7 @@ export default function MembersDirectory() {
                       {tab}
                       {tab === "Pending approval" && (
                         <span className="ml-1.5 rounded-full bg-[#f5eee0] px-1.5 py-0.5 text-[9px] text-[#987340]">
-                          12
+                          {pendingCount}
                         </span>
                       )}
                       {activeTab === tab && (
@@ -470,8 +425,8 @@ export default function MembersDirectory() {
                 </div>
                 <p className="pb-3 text-[10px] text-[#9aa39b]">
                   Showing{" "}
-                  <span className="font-medium text-[#59645c]">{visibleMembers.length}</span> of 248
-                  members
+                  <span className="font-medium text-[#59645c]">{visibleMembers.length}</span> of{" "}
+                  {members.length} members
                 </p>
               </div>
               <div className="flex flex-col gap-2.5 border-b border-[#edf0eb] p-4 sm:flex-row sm:items-center sm:px-5">
@@ -589,7 +544,17 @@ export default function MembersDirectory() {
                     ))}
                   </tbody>
                 </table>
-                {visibleMembers.length === 0 && (
+                {isLoading && (
+                  <p className="px-5 py-14 text-center text-xs text-[#8c968e]">
+                    Loading members from the database…
+                  </p>
+                )}
+                {!isLoading && loadError && (
+                  <p role="alert" className="px-5 py-14 text-center text-xs text-red-600">
+                    {loadError}
+                  </p>
+                )}
+                {!isLoading && !loadError && visibleMembers.length === 0 && (
                   <div className="px-5 py-16 text-center">
                     <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-[#edf3e9] text-[#6d8562]">
                       <Icon name="search" />
@@ -621,35 +586,12 @@ export default function MembersDirectory() {
                   of <span className="font-medium text-[#59645c]">{visibleMembers.length}</span>{" "}
                   results
                 </p>
-                <div className="flex items-center gap-1">
-                  <button
-                    disabled
-                    className="h-7 rounded-md border border-[#e8ece6] px-2.5 text-[10px] text-[#a3aca4]"
-                  >
-                    Previous
-                  </button>
-                  <button className="size-7 rounded-md bg-[#314c35] text-[10px] font-medium text-white">
-                    1
-                  </button>
-                  <button className="size-7 rounded-md text-[10px] text-[#758077] hover:bg-[#f1f4ef]">
-                    2
-                  </button>
-                  <button className="size-7 rounded-md text-[10px] text-[#758077] hover:bg-[#f1f4ef]">
-                    3
-                  </button>
-                  <span className="px-1 text-[10px] text-[#9aa39b]">…</span>
-                  <button className="size-7 rounded-md text-[10px] text-[#758077] hover:bg-[#f1f4ef]">
-                    25
-                  </button>
-                  <button className="h-7 rounded-md border border-[#e8ece6] px-2.5 text-[10px] text-[#59645c] hover:bg-[#f6f8f4]">
-                    Next
-                  </button>
-                </div>
+                <span className="text-[10px] text-[#929c94]">Members from database</span>
               </div>
             </CardContent>
           </Card>
           <footer className="mt-7 flex flex-col justify-between gap-1 border-t border-[#e8ece6] pt-4 text-[9px] text-[#9ba49c] sm:flex-row">
-            <span>© 2026 Pune Camera Photography Association</span>
+            <span>Pune Camera Photography Association</span>
             <span>
               Made for the love of photography <span className="text-[#bc806c]">♥</span>
             </span>
@@ -691,6 +633,11 @@ export default function MembersDirectory() {
               </button>
             </div>
             <form onSubmit={addMember} className="mt-5 space-y-4">
+              {submitError && (
+                <p role="alert" className="text-xs text-red-600">
+                  {submitError}
+                </p>
+              )}
               <label className="block text-[11px] font-medium text-[#556158]">
                 Full name
                 <Input
@@ -723,9 +670,10 @@ export default function MembersDirectory() {
                   </Button>
                   <Button
                     type="submit"
+                    disabled={isSubmitting}
                     className="h-9 rounded-lg bg-[#314c35] px-3.5 text-xs text-white hover:bg-[#263d2a]"
                   >
-                    Create member
+                    {isSubmitting ? "Saving…" : "Create member"}
                   </Button>
                 </div>
               </div>

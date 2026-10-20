@@ -217,6 +217,20 @@ function Icon({ name, size = 18 }: { name: string; size?: number }) {
   );
 }
 
+function Spinner({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={`size-4 animate-spin ${className}`}
+      viewBox="0 0 24 24"
+      fill="none"
+    >
+      <circle className="opacity-25" cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" />
+      <path className="opacity-90" fill="currentColor" d="M12 3a9 9 0 0 1 9 9h-3a6 6 0 0 0-6-6V3Z" />
+    </svg>
+  );
+}
+
 export default function WorkshopsDirectory() {
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [currentTime, setCurrentTime] = useState(0);
@@ -248,6 +262,7 @@ export default function WorkshopsDirectory() {
   const [imagePublicIds, setImagePublicIds] = useState<string[]>([]);
   const [deletingImageId, setDeletingImageId] = useState("");
   const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [imageError, setImageError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -308,7 +323,7 @@ export default function WorkshopsDirectory() {
           (activeTab === "Upcoming" && isUpcoming) ||
           (activeTab === "Completed" && !isUpcoming);
         return matchesQuery && matchesTab;
-      }),
+      }).sort((a, b) => new Date(a.dateIso).getTime() - new Date(b.dateIso).getTime()),
     [workshops, query, activeTab, currentTime],
   );
 
@@ -320,27 +335,34 @@ export default function WorkshopsDirectory() {
     setSponsorsText(workshop.sponsors.join("\n")); setArrangedBy(workshop.arrangedBy); setAnchorName(workshop.anchorName); setGuestName(workshop.guestName);
     setImageUrls(workshop.imageUrls);
     setImagePublicIds(workshop.imagePublicIds);
-    setSubmitError(""); setIsEditing(true); setShowForm(true);
+    setSubmitError(""); setImageError(""); setIsEditing(true); setShowForm(true);
   }
 
   async function uploadImages(files: FileList | null) {
     if (!files?.length) return;
     const selectedFiles = Array.from(files);
+    const maxFileSize = 10 * 1024 * 1024;
+    const oversizedFile = selectedFiles.find((file) => file.size > maxFileSize);
+    if (oversizedFile) {
+      const fileSizeMb = (oversizedFile.size / (1024 * 1024)).toFixed(2);
+      setImageError(`File is too large (${fileSizeMb} MB). Maximum allowed is 10 MB. Choose a smaller image.`);
+      return;
+    }
     if (selectedFiles.length + imageUrls.length > 10) {
-      setSubmitError(`You can add up to 10 images. ${imageUrls.length} already selected.`);
+      setImageError(`You can add up to 10 images. ${imageUrls.length} already selected.`);
       return;
     }
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
     if (!cloudName || !uploadPreset) {
-      setSubmitError("Cloudinary is not configured. Add its cloud name and upload preset to the environment.");
+      setImageError("Cloudinary is not configured. Add its cloud name and upload preset to the environment.");
       return;
     }
     if (selectedFiles.some((file) => !file.type.startsWith("image/"))) {
-      setSubmitError("Choose image files only.");
+      setImageError("Choose image files only.");
       return;
     }
-    setSubmitError("");
+    setImageError("");
     setIsUploadingImages(true);
     const uploadedAssets: { url: string; publicId: string }[] = [];
     try {
@@ -362,7 +384,7 @@ export default function WorkshopsDirectory() {
         setImageUrls((current) => [...current, ...uploadedAssets.map((asset) => asset.url)]);
         setImagePublicIds((current) => [...current, ...uploadedAssets.map((asset) => asset.publicId)]);
       }
-      setSubmitError(error instanceof Error ? error.message : "Could not upload images.");
+      setImageError(error instanceof Error ? error.message : "Could not upload images.");
     } finally {
       setIsUploadingImages(false);
     }
@@ -372,7 +394,7 @@ export default function WorkshopsDirectory() {
     const publicId = imagePublicIds[index];
     if (!publicId || deletingImageId) return;
     setDeletingImageId(publicId);
-    setSubmitError("");
+    setImageError("");
     try {
       const response = await fetch("/api/cloudinary/delete", {
         method: "POST",
@@ -391,7 +413,7 @@ export default function WorkshopsDirectory() {
         setWorkshops((current) => current.map((item) => item.id === updated.id ? updated : item));
       }
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Could not delete the Cloudinary image.");
+      setImageError(error instanceof Error ? error.message : "Could not delete the Cloudinary image.");
     } finally {
       setDeletingImageId("");
     }
@@ -721,7 +743,7 @@ export default function WorkshopsDirectory() {
                     role="button" tabIndex={0} onClick={() => setSelectedWorkshop(workshop)}
                     onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedWorkshop(workshop); } }}
                     aria-label={`View ${workshop.title} details`}
-                    className="flex cursor-pointer flex-col gap-4 px-4 py-4 transition hover:bg-[#fbfcfa] focus-visible:outline-2 focus-visible:outline-[#55754c] sm:flex-row sm:items-center sm:px-5"
+                    className={`flex cursor-pointer flex-col gap-4 px-4 py-4 transition focus-visible:outline-2 focus-visible:outline-[#55754c] sm:flex-row sm:items-center sm:px-5 ${new Date(workshop.dateIso).getTime() >= currentTime ? "bg-[#f3f7f0] hover:bg-[#eaf1e5]" : "bg-[#f6f3f1] hover:bg-[#eee9e6]"}`}
                   >
                     <div
                       className={`flex h-[58px] w-[58px] shrink-0 flex-col items-center justify-center rounded-xl ${workshop.tone === "olive" ? "bg-[#edf3e9] text-[#607952]" : workshop.tone === "rose" ? "bg-[#f7e9e7] text-[#a7685d]" : workshop.tone === "blue" ? "bg-[#e9eff4] text-[#657f94]" : workshop.tone === "peach" ? "bg-[#f7ede3] text-[#a77b55]" : "bg-[#f5f0df] text-[#927c3d]"}`}
@@ -926,9 +948,39 @@ export default function WorkshopsDirectory() {
                 <label className="block text-[11px] font-medium text-[#556158]">
                   Workshop images <span className="font-normal text-[#89938b]">(up to 10)</span>
                   <Input type="file" accept="image/*" multiple disabled={isUploadingImages || imageUrls.length >= 10} onChange={(event) => { void uploadImages(event.target.files); event.currentTarget.value = ""; }} className="mt-1.5 h-10 cursor-pointer text-xs file:mr-3 file:rounded-md file:border-0 file:bg-[#edf3e9] file:px-2 file:py-1 file:text-[10px]" />
-                  <span className="mt-1 block font-normal text-[#89938b]">{isUploadingImages ? "Uploading images…" : `${imageUrls.length} of 10 images uploaded to Cloudinary.`}</span>
+                  <span aria-live="polite" className="mt-1 flex min-h-4 items-center gap-2 font-normal text-[#89938b]">
+                    {isUploadingImages && <Spinner className="size-3.5 text-[#597451]" />}
+                    {isUploadingImages ? "Uploading images…" : `${imageUrls.length} of 10 images uploaded to Cloudinary.`}
+                  </span>
                 </label>
-                {imageUrls.length > 0 && <div className="mt-3 grid grid-cols-3 gap-2">{imageUrls.map((url, index) => <div key={url} className="relative"><img src={url} alt={`Workshop upload ${index + 1}`} className="h-20 w-full rounded-md object-cover" /><button type="button" aria-label={`Delete image ${index + 1}`} disabled={Boolean(deletingImageId) || isUploadingImages} onClick={() => void deleteImage(index)} className="absolute right-1 top-1 rounded-full bg-black/70 px-1.5 text-sm text-white disabled:opacity-50">{deletingImageId === imagePublicIds[index] ? "…" : "×"}</button></div>)}</div>}
+                {imageError && <p role="alert" className="mt-2 text-xs text-red-600">{imageError}</p>}
+                {imageUrls.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {imageUrls.map((url, index) => {
+                      const isDeletingThisImage = deletingImageId === imagePublicIds[index];
+                      return (
+                        <div key={url} className="relative overflow-hidden rounded-md">
+                          <img src={url} alt={`Workshop upload ${index + 1}`} className="h-20 w-full object-cover" />
+                          {isDeletingThisImage && (
+                            <div role="status" aria-label="Deleting image" className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 text-[10px] font-medium text-white">
+                              <Spinner className="size-4" />
+                              Deleting…
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            aria-label={`Delete image ${index + 1}`}
+                            disabled={Boolean(deletingImageId) || isUploadingImages}
+                            onClick={() => void deleteImage(index)}
+                            className="absolute right-1 top-1 rounded-full bg-black/70 px-1.5 text-sm text-white disabled:opacity-50"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
               <div className="border-t border-[#edf0eb] pt-4">
                 <p className="mb-3 text-xs font-semibold text-[#314c35]">Fees &amp; expenses (optional)</p>

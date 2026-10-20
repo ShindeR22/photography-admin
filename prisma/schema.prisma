@@ -13,10 +13,25 @@ model Member {
   name           String
   email          String    @unique
   phone          String    @default("")
+  address        String    @default("")
+  studioName     String    @default("")
+  aadhaarNumber  String    @default("")
+  udyamAadhaar   String    @default("")
+  membershipFee  Float     @default(0)
+  membershipPeriodYears Int @default(1)
+  experienceYears Int      @default(0)
+  bloodGroup     String    @default("")
+  professions    String[]  @default([])
+  camerasUsed    String[]  @default([])
+  photoUrl       String    @default("")
+  aadhaarPhotoUrl String   @default("")
+  udyamAadhaarPhotoUrl String @default("")
   membershipType String    @default("Annual")
+  registrationDate DateTime @default(now())
   joinedAt       DateTime  @default(now())
   expiresAt      DateTime?
   status         String    @default("Pending")
+  deletedAt      DateTime?
 
   @@map("members")
 }

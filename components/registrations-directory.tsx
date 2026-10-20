@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import MobileSidebar from "@/app/components/mobile-sidebar";
 
 type Registration = {
   id: string;
@@ -364,10 +365,8 @@ export default function RegistrationsDirectory() {
 
       <section className="lg:pl-[252px]">
         <header className="sticky top-0 z-10 flex h-[70px] items-center justify-between border-b border-[#e9ece6] bg-[#fbfcfa]/95 px-5 backdrop-blur-md sm:px-8 lg:px-10">
-          <div className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-[#e7efdf] text-[#3d5941] lg:hidden">
-              <Icon name="camera" />
-            </div>
+          <div className="flex items-center">
+            <MobileSidebar navItems={[{ label: "Overview", href: "/", icon: "◫" }, { label: "Members", href: "/members", icon: "♧" }, { label: "Workshops", href: "/workshops", icon: "▦" }, { label: "Registrations", href: "/registrations", icon: "▤", active: true, count: registrations.length }]} summary={`${registrations.length} registrations`} />
             <div>
               <p className="text-[11px] text-[#8b948c]">
                 Association / <span className="text-[#455248]">Registrations</span>

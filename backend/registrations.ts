@@ -33,7 +33,12 @@ export async function createRegistration(request: Request) {
   try {
     const [member, workshop] = await Promise.all([
       prisma.member.findUnique({ where: { id: validation.data.memberId } }),
-      prisma.workshop.findUnique({ where: { id: validation.data.workshopId } }),
+      prisma.workshop.findFirst({
+        where: {
+          id: validation.data.workshopId,
+          OR: [{ deletedAt: null }, { deletedAt: { isSet: false } }],
+        },
+      }),
     ]);
 
     if (!member || !workshop) {

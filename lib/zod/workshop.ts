@@ -36,4 +36,17 @@ export const workshopSchema = z.object({
     .trim()
     .min(1, "Enter the workshop time.")
     .max(80, "Workshop time must be 80 characters or fewer."),
+  venueFee: z.coerce.number().finite().min(0, "Venue fee cannot be negative.").default(0),
+  mentorFee: z.coerce.number().finite().min(0, "Mentor fee cannot be negative.").default(0),
+  foodExpense: z.coerce.number().finite().min(0, "Food expense cannot be negative.").default(0),
+  advertisingExpense: z.coerce.number().finite().min(0, "Advertising expense cannot be negative.").default(0),
+  sponsors: z.array(z.string().trim().min(1).max(240)).max(20).default([]),
+  arrangedBy: z.string().trim().max(120).default(""),
+  anchorName: z.string().trim().max(120).default(""),
+  guestName: z.string().trim().max(240).default(""),
+  imageUrls: z.array(z.string().url("Workshop image URL is invalid.")).max(10, "A workshop can have at most 10 images.").default([]),
+  imagePublicIds: z.array(z.string().min(1).max(500)).max(10).default([]),
+}).refine((workshop) => workshop.imageUrls.length === workshop.imagePublicIds.length, {
+  message: "Each workshop image must have a matching Cloudinary asset ID.",
+  path: ["imagePublicIds"],
 });

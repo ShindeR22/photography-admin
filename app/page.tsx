@@ -3,6 +3,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
+import MobileSidebar from "@/app/components/mobile-sidebar";
+
+export const instant = false;
 
 const colors = ["sage", "peach", "blue", "lavender", "rose", "yellow"];
 
@@ -26,7 +29,10 @@ function formatDate(date: Date) {
 export default async function Home() {
   const [members, workshops, registrations] = await Promise.all([
     prisma.member.findMany({ orderBy: { joinedAt: "desc" } }),
-    prisma.workshop.findMany({ orderBy: { date: "asc" } }),
+    prisma.workshop.findMany({
+      where: { OR: [{ deletedAt: null }, { deletedAt: { isSet: false } }] },
+      orderBy: { date: "asc" },
+    }),
     prisma.registration.findMany({ orderBy: { registeredAt: "desc" } }),
   ]);
 
@@ -117,11 +123,17 @@ export default async function Home() {
 
       <section className="lg:pl-[252px]">
         <header className="sticky top-0 z-10 flex h-[70px] items-center justify-between border-b border-[#e9ece6] bg-[#fbfcfa]/95 px-5 backdrop-blur-md sm:px-8 lg:px-10">
-          <div>
-            <p className="text-[11px] text-[#8b948c]">
-              Association / <span className="text-[#455248]">Overview</span>
-            </p>
-            <p className="mt-0.5 text-sm font-semibold lg:hidden">Pune Camera Association</p>
+          <div className="flex items-center">
+            <MobileSidebar
+              navItems={navItems}
+              summary={`${members.length} members · ${workshops.length} workshops · ${registrations.length} registrations`}
+            />
+            <div>
+              <p className="text-[11px] text-[#8b948c]">
+                Association / <span className="text-[#455248]">Overview</span>
+              </p>
+              <p className="mt-0.5 text-sm font-semibold lg:hidden">Pune Camera Association</p>
+            </div>
           </div>
           <p className="hidden text-[11px] font-medium text-[#59645c] sm:block">
             {now.toLocaleDateString("en-IN", {

@@ -30,8 +30,19 @@ model Workshop {
   description     String
   mentorName      String
   time            String
+  venueFee        Float?
+  mentorFee       Float?
+  foodExpense     Float?
+  advertisingExpense Float?
+  sponsors        String[] @default([])
+  arrangedBy      String?
+  anchorName      String?
+  guestName       String?
+  imageUrls       String[] @default([])
+  imagePublicIds  String[] @default([])
   status          String   @default("Planning")
   createdAt       DateTime @default(now())
+  deletedAt       DateTime?
 
   @@map("workshops")
 }

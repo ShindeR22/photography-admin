@@ -4,7 +4,12 @@ import { memberSchema } from "@/lib/zod/member";
 
 export async function getMembers() {
   try {
-    return Response.json(await prisma.member.findMany({ where: { deletedAt: null }, orderBy: { joinedAt: "desc" } }));
+    return Response.json(await prisma.member.findMany({
+      where: {
+        OR: [{ deletedAt: null }, { deletedAt: { isSet: false } }],
+      },
+      orderBy: { joinedAt: "desc" },
+    }));
   } catch {
     return Response.json({ error: "Could not load members from the database." }, { status: 500 });
   }
@@ -112,14 +117,18 @@ export async function approveMember(id: string) {
 
 export async function softDeleteMember(id: string) {
   try {
+    const deletedAt = new Date();
     const member = await prisma.member.updateMany({
-      where: { id, deletedAt: null },
-      data: { deletedAt: new Date() },
+      where: {
+        id,
+        OR: [{ deletedAt: null }, { deletedAt: { isSet: false } }],
+      },
+      data: { deletedAt },
     });
     if (!member.count) {
       return Response.json({ error: "Member not found or already deleted." }, { status: 404 });
     }
-    return Response.json({ success: true });
+    return Response.json({ success: true, deletedAt: deletedAt.toISOString() });
   } catch {
     return Response.json({ error: "Could not delete the member." }, { status: 500 });
   }

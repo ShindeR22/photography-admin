@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import MobileSidebar from "@/app/components/mobile-sidebar";
+import AppSidebar from "@/app/components/app-sidebar";
 
 type Registration = {
   id: string;
@@ -308,60 +309,7 @@ export default function RegistrationsDirectory() {
 
   return (
     <main className="min-h-screen bg-[#f7f8f5] text-[#1c2720]">
-      <aside className="sidebar fixed inset-y-0 left-0 z-20 hidden w-[252px] flex-col bg-[#19241d] px-5 py-6 text-white lg:flex">
-        <Link href="/" className="mb-10 flex items-center gap-3 px-2">
-          <span className="flex size-10 items-center justify-center rounded-xl bg-[#d5edbd] text-[#243a27]">
-            <Icon name="camera" size={21} />
-          </span>
-          <span>
-            <span className="block text-[15px] font-semibold tracking-tight">Pune Camera</span>
-            <span className="mt-0.5 block text-[11px] tracking-[.12em] text-[#a5b3a7]">
-              PHOTOGRAPHY ASSOCIATION
-            </span>
-          </span>
-        </Link>
-        <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[.16em] text-[#87968a]">
-          Workspace
-        </p>
-        <nav className="space-y-1" aria-label="Main navigation">
-          <NavItem href="/" label="Overview" icon="grid" />
-          <NavItem href="/members" label="Members" icon="users" />
-          <NavItem href="/workshops" label="Workshops" icon="calendar" />
-          <NavItem
-            href="/registrations"
-            label="Registrations"
-            icon="ticket"
-            count={String(registrations.length)}
-            active
-          />
-          <NavItem href="/#accounts" label="Accounts" icon="wallet" />
-        </nav>
-        <p className="mb-3 mt-9 px-3 text-[10px] font-semibold uppercase tracking-[.16em] text-[#87968a]">
-          Manage
-        </p>
-        <NavItem href="/#settings" label="Settings" icon="settings" />
-        <div className="mt-auto rounded-xl border border-white/10 bg-white/[.04] p-4">
-          <div className="mb-2 flex items-center gap-2">
-            <span className="size-2 rounded-full bg-[#e7c47d]" />
-            <span className="text-xs font-medium text-[#e1e9e2]">Payment follow-up</span>
-          </div>
-          <p className="mb-2 text-[11px] leading-relaxed text-[#9ca99e]">
-            {pendingPayments} registrations need payment confirmation.
-          </p>
-          <a href="#payment-status" className="text-[10px] font-medium text-[#d3e4c9]">
-            Review pending <span aria-hidden="true">→</span>
-          </a>
-        </div>
-        <div className="mt-5 flex items-center gap-3 border-t border-white/10 px-1 pt-5">
-          <div className="flex size-9 items-center justify-center rounded-full bg-[#e9c6a6] text-xs font-semibold text-[#573c29]">
-            TD
-          </div>
-          <div>
-            <p className="text-xs font-medium">Tanmay Deshmukh</p>
-            <p className="mt-0.5 text-[10px] text-[#9ca99e]">Administrator</p>
-          </div>
-        </div>
-      </aside>
+      <AppSidebar activeRoute="registrations" counts={{ registrations: registrations.length }} />
 
       <section className="lg:pl-[252px]">
         <header className="sticky top-0 z-10 flex h-[70px] items-center justify-between border-b border-[#e9ece6] bg-[#fbfcfa]/95 px-5 backdrop-blur-md sm:px-8 lg:px-10">
@@ -744,35 +692,6 @@ export default function RegistrationsDirectory() {
         </div>
       )}
     </main>
-  );
-}
-
-function NavItem({
-  href,
-  label,
-  icon,
-  count,
-  active = false,
-}: {
-  href: string;
-  label: string;
-  icon: string;
-  count?: string;
-  active?: boolean;
-}) {
-  return (
-    <a
-      href={href}
-      className={`flex h-11 items-center gap-3 rounded-lg px-3 text-[13px] transition ${active ? "bg-[#2c3a30] font-medium text-[#e3f2d9]" : "text-[#bdc8bf] hover:bg-[#253229] hover:text-white"}`}
-    >
-      <Icon name={icon} />
-      <span className="flex-1">{label}</span>
-      {count && (
-        <span className="rounded-md bg-white/10 px-2 py-0.5 text-[10px] text-[#d2dcd4]">
-          {count}
-        </span>
-      )}
-    </a>
   );
 }
 

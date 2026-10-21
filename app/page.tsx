@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import MobileSidebar from "@/app/components/mobile-sidebar";
+import AppSidebar from "@/app/components/app-sidebar";
 
 export const instant = false;
 
@@ -82,44 +83,7 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-[#f7f8f5] text-[#1c2720]">
-      <aside className="sidebar fixed inset-y-0 left-0 z-20 hidden w-[252px] flex-col bg-[#19241d] px-5 py-6 text-white lg:flex">
-        <Link href="/" className="mb-10 flex items-center gap-3 px-2">
-          <span className="flex size-10 items-center justify-center rounded-xl bg-[#d5edbd] text-[#243a27]">
-            ◉
-          </span>
-          <span>
-            <span className="block text-[15px] font-semibold tracking-tight">Pune Camera</span>
-            <span className="mt-0.5 block text-[11px] tracking-[.12em] text-[#a5b3a7]">
-              PHOTOGRAPHY ASSOCIATION
-            </span>
-          </span>
-        </Link>
-        <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[.16em] text-[#87968a]">
-          Workspace
-        </p>
-        <nav className="space-y-1" aria-label="Main navigation">
-          {navItems.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={`flex h-11 items-center gap-3 rounded-lg px-3 text-[13px] transition ${item.active ? "bg-[#2c3a30] font-medium text-[#e3f2d9]" : "text-[#bdc8bf] hover:bg-[#253229] hover:text-white"}`}
-            >
-              <span className="w-5 text-center">{item.icon}</span>
-              <span className="flex-1">{item.label}</span>
-              {item.count !== undefined && (
-                <span className="rounded-md bg-white/10 px-2 py-0.5 text-[10px]">{item.count}</span>
-              )}
-            </Link>
-          ))}
-        </nav>
-        <div className="mt-auto rounded-xl border border-white/10 bg-white/[.04] p-4">
-          <p className="text-xs font-medium text-[#e1e9e2]">Database summary</p>
-          <p className="mt-2 text-[11px] text-[#9ca99e]">
-            {members.length} members · {workshops.length} workshops · {registrations.length}{" "}
-            registrations
-          </p>
-        </div>
-      </aside>
+      <AppSidebar activeRoute="overview" counts={{ members: members.length, workshops: workshops.length, registrations: registrations.length }} />
 
       <section className="lg:pl-[252px]">
         <header className="sticky top-0 z-10 flex h-[70px] items-center justify-between border-b border-[#e9ece6] bg-[#fbfcfa]/95 px-5 backdrop-blur-md sm:px-8 lg:px-10">

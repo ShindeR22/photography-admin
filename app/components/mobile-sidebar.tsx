@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { createPortal } from "react-dom";
 
 type NavItem = {
@@ -43,12 +44,8 @@ export default function MobileSidebar({
             className="fixed inset-0 z-[90] bg-black/45 lg:hidden"
           />
           <aside className="sidebar fixed inset-y-0 left-0 z-[100] flex w-[280px] max-w-[85vw] flex-col px-5 py-6 text-white lg:hidden" style={{ backgroundColor: "#19241d", opacity: 1 }}>
-            <Link href="/" onClick={() => setOpen(false)} className="mb-10 flex items-center gap-3 px-2">
-              <span className="flex size-10 items-center justify-center rounded-xl bg-[#d5edbd] text-[#243a27]">◉</span>
-              <span>
-                <span className="block text-[15px] font-semibold tracking-tight">Pune Camera</span>
-                <span className="mt-0.5 block text-[11px] tracking-[.12em] text-[#a5b3a7]">PHOTOGRAPHY ASSOCIATION</span>
-              </span>
+            <Link href="/" onClick={() => setOpen(false)} aria-label="Pune Camera Photography Association home" className="mb-8 flex justify-center px-2">
+              <Image src="/pcpa-logo.png" alt="Pune Camera Photography Association" width={594} height={420} priority className="h-auto w-full max-w-[158px] object-contain" />
             </Link>
             <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[.16em] text-[#87968a]">Workspace</p>
             <nav className="space-y-1" aria-label="Main navigation">

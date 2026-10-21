@@ -49,6 +49,83 @@ type MemberRecord = {
   registrationDate?: string;
 };
 
+async function imageAsDataUrl(url: string) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Could not load an image for the ID card.");
+  const blob = await response.blob();
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Could not read an image for the ID card."));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function escapeXml(value: string) {
+  const entities: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" };
+  return value.replace(/[&<>"']/g, (char) => entities[char]);
+}
+
+async function downloadMemberIdCard(record: MemberRecord) {
+  const [logo, portrait] = await Promise.all([
+    imageAsDataUrl("/pcpa-logo.png"),
+    record.photoUrl ? imageAsDataUrl(record.photoUrl) : Promise.resolve(""),
+  ]);
+  const name = escapeXml(record.name);
+  const memberId = escapeXml(record.memberNumber);
+  const address = (record.address || "—").replace(/\s+/g, " ").trim();
+  const addressLines = address.match(/.{1,42}(?:\s|$)/g)?.map((line) => line.trim()).slice(0, 3) ?? [address];
+  const addressMarkup = addressLines.map((line, index) => `<tspan x="54" dy="${index ? 23 : 0}">${escapeXml(line)}</tspan>`).join("");
+  const registrationDate = escapeXml(formatMemberDate(record.registrationDate ?? record.joinedAt));
+  const expiry = escapeXml(formatMemberDate(record.expiresAt));
+  const aadhaar = escapeXml(record.aadhaarNumber || "—");
+  const membershipType = escapeXml(record.membershipType || "Member");
+  const phone = escapeXml(record.phone || "—");
+  const initials = escapeXml(record.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase());
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1080" height="1712" viewBox="0 0 540 856">
+    <defs><linearGradient id="header" x2="1"><stop stop-color="#19241d"/><stop offset="1" stop-color="#314c35"/></linearGradient><clipPath id="photo"><rect x="190" y="166" width="160" height="178" rx="16"/></clipPath></defs>
+    <rect x="1" y="1" width="538" height="854" rx="24" fill="#fff" stroke="#dce5d7" stroke-width="2"/><path d="M24 2h492a22 22 0 0 1 22 22v132H2V24A22 22 0 0 1 24 2" fill="url(#header)"/>
+    <image x="22" y="16" width="112" height="118" preserveAspectRatio="xMidYMid meet" href="${logo}" xlink:href="${logo}"/>
+    <text x="270" y="62" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="21" font-weight="700">Pimpri-Chinchwad</text><text x="270" y="92" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="18" font-weight="700">Photographers Association</text><text x="270" y="127" text-anchor="middle" fill="#c4d7ba" font-family="Arial,sans-serif" font-size="12" letter-spacing="2">MEMBER ID CARD</text>
+    ${portrait ? `<image x="190" y="166" width="160" height="178" preserveAspectRatio="xMidYMid slice" clip-path="url(#photo)" href="${portrait}" xlink:href="${portrait}"/>` : `<rect x="190" y="166" width="160" height="178" rx="16" fill="#e4eade"/><text x="270" y="266" text-anchor="middle" fill="#536b4f" font-family="Arial,sans-serif" font-size="52" font-weight="700">${initials}</text>`}
+    <text x="270" y="380" text-anchor="middle" fill="#1c2720" font-family="Arial,sans-serif" font-size="25" font-weight="700">${name}</text><text x="270" y="407" text-anchor="middle" fill="#536b4f" font-family="Arial,sans-serif" font-size="15" font-weight="600">ID: ${memberId}</text>
+    <path d="M38 427h464" stroke="#e4eae1" stroke-width="2"/>
+    <text x="54" y="458" fill="#7d8c7d" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="1.5">ADDRESS</text><text x="54" y="486" fill="#26342a" font-family="Arial,sans-serif" font-size="16">${addressMarkup}</text>
+    <text x="54" y="575" fill="#7d8c7d" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="1">REGISTRATION DATE</text><text x="54" y="600" fill="#26342a" font-family="Arial,sans-serif" font-size="16">${registrationDate}</text>
+    <text x="292" y="575" fill="#7d8c7d" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="1">EXPIRY DATE</text><text x="292" y="600" fill="#26342a" font-family="Arial,sans-serif" font-size="16">${expiry}</text>
+    <text x="54" y="638" fill="#7d8c7d" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="1">MEMBERSHIP TYPE</text><text x="54" y="663" fill="#26342a" font-family="Arial,sans-serif" font-size="16" font-weight="600">${membershipType}</text>
+    <text x="292" y="638" fill="#7d8c7d" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="1">STATUS</text><rect x="292" y="646" width="76" height="25" rx="12" fill="#eaf3e4"/><text x="330" y="663" text-anchor="middle" fill="#557249" font-family="Arial,sans-serif" font-size="12" font-weight="700">ACTIVE</text>
+    <text x="54" y="700" fill="#7d8c7d" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="1">AADHAAR NUMBER</text><text x="54" y="727" fill="#26342a" font-family="Arial,sans-serif" font-size="17" font-weight="600">${aadhaar}</text>
+    <text x="292" y="700" fill="#7d8c7d" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="1">PHONE</text><text x="292" y="727" fill="#26342a" font-family="Arial,sans-serif" font-size="17">${phone}</text>
+    <path d="M38 749h464" stroke="#e4eae1" stroke-width="2"/>
+    <path d="M53 808h190" stroke="#71816f" stroke-width="1.5"/><text x="148" y="830" text-anchor="middle" fill="#68756a" font-family="Arial,sans-serif" font-size="12">President&apos;s Signature</text>
+    <circle cx="405" cy="801" r="42" fill="none" stroke="#7d9275" stroke-width="2" stroke-dasharray="5 4"/><text x="405" y="798" text-anchor="middle" fill="#71816f" font-family="Arial,sans-serif" font-size="10" font-weight="700" letter-spacing="1">ASSOCIATION</text><text x="405" y="815" text-anchor="middle" fill="#71816f" font-family="Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="2">SEAL</text>
+    <text x="270" y="850" text-anchor="middle" fill="#879487" font-family="Arial,sans-serif" font-size="10">Pimpri-Chinchwad Photographers Association</text>
+  </svg>`;
+  const svgBlob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+  const svgUrl = URL.createObjectURL(svgBlob);
+  try {
+    const image = new Image();
+    image.src = svgUrl;
+    await image.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080;
+    canvas.height = 1712;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Could not create the ID card image.");
+    context.drawImage(image, 0, 0);
+    const png = await new Promise<Blob>((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Could not export the ID card.")), "image/png"));
+    const downloadUrl = URL.createObjectURL(png);
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = `pcpa-id-card-${record.memberNumber.replace(/[^a-zA-Z0-9_-]/g, "-")}.png`;
+    link.click();
+    URL.revokeObjectURL(downloadUrl);
+  } finally {
+    URL.revokeObjectURL(svgUrl);
+  }
+}
+
 function formatMemberDate(value: string | null) {
   if (!value) return "Lifetime";
   return new Date(value).toLocaleDateString("en-IN", {
@@ -192,6 +269,7 @@ export default function MembersDirectory() {
   const [editingMember, setEditingMember] = useState<MemberRecord | null>(null);
   const [approvingMemberId, setApprovingMemberId] = useState("");
   const [statusActionError, setStatusActionError] = useState("");
+  const [idCardError, setIdCardError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [submitError, setSubmitError] = useState("");
@@ -405,6 +483,15 @@ export default function MembersDirectory() {
     ["Udyam Aadhaar photo", "udyam", udyamPhotoUrl, setUdyamPhotoUrl],
   ];
 
+  async function handleIdCardDownload(record: MemberRecord) {
+    setIdCardError("");
+    try {
+      await downloadMemberIdCard(record);
+    } catch (error) {
+      setIdCardError(error instanceof Error ? error.message : "Could not download the ID card.");
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#f7f8f5] text-[#1c2720]">
       <AppSidebar activeRoute="members" counts={{ members: members.length }} />
@@ -574,6 +661,7 @@ export default function MembersDirectory() {
 
               <div className="overflow-x-auto">
                 {statusActionError && <p role="alert" className="px-5 py-2 text-xs text-red-600">{statusActionError}</p>}
+                {idCardError && <p role="alert" className="px-5 py-2 text-xs text-red-600">{idCardError}</p>}
                 <table className="w-full min-w-[840px] text-left">
                   <thead>
                     <tr className="bg-[#fafbf9] text-[9px] font-medium uppercase tracking-[.1em] text-[#9aa39b]">
@@ -625,6 +713,7 @@ export default function MembersDirectory() {
                           <div className="flex justify-end gap-2">
                             <button onClick={() => setSelectedRecord(memberRecords.find((record) => record.memberNumber === member.id) ?? null)} className="rounded-md border border-[#e7ebe5] px-2 py-1 text-[10px] text-[#536256] hover:bg-[#f5f7f3]">View</button>
                             <button onClick={() => { const record = memberRecords.find((item) => item.memberNumber === member.id); if (record) openEditForm(record); }} className="rounded-md border border-[#e7ebe5] px-2 py-1 text-[10px] text-[#536256] hover:bg-[#f5f7f3]">Edit</button>
+                            {member.status === "Active" && <button onClick={() => { const record = memberRecords.find((item) => item.memberNumber === member.id); if (record) void handleIdCardDownload(record); }} className="whitespace-nowrap rounded-md border border-[#d8e5d0] bg-[#f2f7ee] px-2 py-1 text-[10px] font-medium text-[#405b3c] hover:bg-[#e8f1e2]">Download ID</button>}
                             {member.status === "Pending" && <button onClick={() => { const record = memberRecords.find((item) => item.memberNumber === member.id); if (record) void approveMember(record); }} disabled={!!approvingMemberId} className="rounded-md bg-[#314c35] px-2 py-1 text-[10px] text-white hover:bg-[#263d2a] disabled:opacity-50">{approvingMemberId === memberRecords.find((item) => item.memberNumber === member.id)?.id ? "Approving…" : "Approve"}</button>}
                           </div>
                         </td>

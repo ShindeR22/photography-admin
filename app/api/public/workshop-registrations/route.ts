@@ -1,4 +1,5 @@
 import { createPublicWorkshopRegistration } from "@/backend/registrations";
+import { denyViewerWrite } from "@/lib/current-admin";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,8 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: Request) {
+  const denied = await denyViewerWrite();
+  if (denied) return denied;
   const response = await createPublicWorkshopRegistration(request);
   const headers = new Headers(response.headers);
   Object.entries(corsHeaders).forEach(([key, value]) => headers.set(key, value));

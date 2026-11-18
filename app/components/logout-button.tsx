@@ -29,7 +29,7 @@ export default function LogoutButton({
   return (
     <button type="button" onClick={logout} disabled={pending} className={className}>
       <span className="w-5 text-center">↪</span>
-      <span>{pending ? "बाहेर पडत आहे…" : "Logout"}</span>
+      <span>{pending ? "Signing out…" : "Log out"}</span>
     </button>
   );
 }

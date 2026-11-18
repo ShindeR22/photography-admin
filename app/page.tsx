@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import MobileSidebar from "@/app/components/mobile-sidebar";
 import AppSidebar from "@/app/components/app-sidebar";
+import { isReadOnlyAdmin } from "@/lib/current-admin";
 
 export const instant = false;
 
@@ -28,13 +29,14 @@ function formatDate(date: Date) {
 }
 
 export default async function Home() {
-  const [members, workshops, registrations] = await Promise.all([
+  const [members, workshops, registrations, readOnly] = await Promise.all([
     prisma.member.findMany({ orderBy: { joinedAt: "desc" } }),
     prisma.workshop.findMany({
       where: { OR: [{ deletedAt: null }, { deletedAt: { isSet: false } }] },
       orderBy: { date: "asc" },
     }),
     prisma.registration.findMany({ orderBy: { registeredAt: "desc" } }),
+    isReadOnlyAdmin(),
   ]);
 
   const now = new Date();
@@ -90,6 +92,7 @@ export default async function Home() {
           workshops: workshops.length,
           registrations: registrations.length,
         }}
+        readOnly={readOnly}
       />
 
       <section className="lg:pl-[252px]">
@@ -98,6 +101,7 @@ export default async function Home() {
             <MobileSidebar
               navItems={navItems}
               summary={`${members.length} members · ${workshops.length} workshops · ${registrations.length} registrations`}
+              readOnly={readOnly}
             />
             <div>
               <p className="text-[11px] text-[#8b948c]">
@@ -131,11 +135,11 @@ export default async function Home() {
                 Summary from your MongoDB records.
               </p>
             </div>
-            <Link href="/members">
+            {!readOnly && <Link href="/members">
               <Button className="h-10 gap-2 rounded-lg bg-[#314c35] px-4 text-xs font-medium text-white hover:bg-[#263d2a]">
                 + Add member
               </Button>
-            </Link>
+            </Link>}
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

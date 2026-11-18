@@ -239,7 +239,7 @@ function Spinner({ className = "" }: { className?: string }) {
   );
 }
 
-export default function WorkshopsDirectory() {
+export default function WorkshopsDirectory({ readOnly = false }: { readOnly?: boolean }) {
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [currentTime, setCurrentTime] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -615,7 +615,7 @@ export default function WorkshopsDirectory() {
 
   return (
     <main className="min-h-screen bg-[#f7f8f5] text-[#1c2720]">
-      <AppSidebar activeRoute="workshops" counts={{ workshops: workshops.length }} />
+      <AppSidebar activeRoute="workshops" counts={{ workshops: workshops.length }} readOnly={readOnly} />
 
       <section className="lg:pl-[252px]">
         <header className="sticky top-0 z-10 flex h-[70px] items-center justify-between border-b border-[#e9ece6] bg-[#fbfcfa]/95 px-5 backdrop-blur-md sm:px-8 lg:px-10">
@@ -634,6 +634,7 @@ export default function WorkshopsDirectory() {
                 { label: "Registrations", href: "/registrations", icon: "▤" },
               ]}
               summary={`${workshops.length} workshops`}
+              readOnly={readOnly}
             />
             <div>
               <p className="text-[11px] text-[#8b948c]">
@@ -662,7 +663,7 @@ export default function WorkshopsDirectory() {
                 Plan monthly sessions and keep track of member registrations.
               </p>
             </div>
-            <Button
+            {!readOnly && <Button
               onClick={() => {
                 setSelectedWorkshop(null);
                 setIsEditing(false);
@@ -671,7 +672,7 @@ export default function WorkshopsDirectory() {
               className="h-10 w-fit gap-2 rounded-lg bg-[#314c35] px-4 text-xs font-medium text-white shadow-sm hover:bg-[#263d2a]"
             >
               <Icon name="plus" size={16} /> Create workshop
-            </Button>
+            </Button>}
           </div>
 
           <div className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-4">
@@ -847,7 +848,7 @@ export default function WorkshopsDirectory() {
                       </div>
                     </div>
                     <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
-                      <Button
+                      {!readOnly && <Button
                         type="button"
                         aria-pressed={workshop.isActive}
                         onClick={(event) => {
@@ -858,7 +859,7 @@ export default function WorkshopsDirectory() {
                         className={`h-8 rounded-lg px-3 text-[10px] ${workshop.isActive ? "border border-[#c8d7bf] bg-white text-[#49633f] hover:bg-[#edf4e9]" : "bg-[#59635b] text-white hover:bg-[#414c43]"}`}
                       >
                         {workshop.isActive ? "Active" : "Inactive"}
-                      </Button>
+                      </Button>}
                       <div className="text-right">
                         <p className="text-[9px] text-[#8c968e]">Registration fee</p>
                         <p className="mt-1 text-sm font-semibold text-[#455148]">
@@ -1011,7 +1012,7 @@ export default function WorkshopsDirectory() {
                 {deleteError}
               </p>
             )}
-            <div className="mt-5 flex justify-between">
+            {!readOnly && <div className="mt-5 flex justify-between">
               <Button
                 onClick={() => deleteWorkshop(selectedWorkshop)}
                 disabled={isDeleting}
@@ -1025,12 +1026,12 @@ export default function WorkshopsDirectory() {
               >
                 Edit workshop
               </Button>
-            </div>
+            </div>}
           </div>
         </div>
       )}
 
-      {showForm && (
+      {showForm && !readOnly && (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center bg-[#142019]/40 p-4 backdrop-blur-[2px]"
           onMouseDown={(event) => {

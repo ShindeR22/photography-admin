@@ -1,4 +1,5 @@
 import { createMember, getMembers } from "@/backend/members";
+import { requireAdminWrite } from "@/lib/current-admin";
 
 function allowedOrigin(origin: string | null) {
   if (!origin) return null;
@@ -44,6 +45,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const denied = await requireAdminWrite();
+  if (denied) return denied;
   return withCors(request, await createMember(request));
 }
 

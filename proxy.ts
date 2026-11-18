@@ -1,12 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ADMIN_COOKIE, isValidSession } from "@/lib/admin-auth";
+import { ADMIN_COOKIE, getAdminSession } from "@/lib/admin-session";
 
 export function proxy(request: NextRequest) {
-  const valid = isValidSession(request.cookies.get(ADMIN_COOKIE)?.value);
+  const session = getAdminSession(request.cookies.get(ADMIN_COOKIE)?.value);
   if (request.nextUrl.pathname === "/login") {
-    return valid ? NextResponse.redirect(new URL("/", request.url)) : NextResponse.next();
+    return session ? NextResponse.redirect(new URL("/", request.url)) : NextResponse.next();
   }
-  if (valid) return NextResponse.next();
+  const isSafeMethod = ["GET", "HEAD", "OPTIONS"].includes(request.method);
+  if (session?.role === "viewer" && !isSafeMethod) {
+    return NextResponse.json({ error: "This account has read-only access." }, { status: 403 });
+  }
+  if (request.nextUrl.pathname.startsWith("/api/public/")) return NextResponse.next();
+  if (session) return NextResponse.next();
   if (request.nextUrl.pathname.startsWith("/api/")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -16,5 +21,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!login|api/auth|api/public|workshops/register|_next/static|_next/image|favicon.ico).*)", "/login"],
+  matcher: ["/((?!login|api/auth|workshops/register|_next/static|_next/image|favicon.ico).*)", "/login"],
 };

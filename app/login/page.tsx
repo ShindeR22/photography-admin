@@ -22,7 +22,7 @@ export default function LoginPage() {
         </p>
         <h1 className="mt-2 text-[30px] font-semibold tracking-[-.04em]">Welcome back</h1>
         <p className="mt-2 text-sm leading-6 text-[#7b857d]">
-          तुमच्या dashboard मध्ये प्रवेश करण्यासाठी लॉग इन करा.
+          Sign in to access your dashboard.
         </p>
         <LoginForm />
         <p className="mt-7 border-t border-[#edf0eb] pt-5 text-center text-[11px] text-[#9ba49c]">

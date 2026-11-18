@@ -17,9 +17,11 @@ type NavItem = {
 export default function MobileSidebar({
   navItems,
   summary,
+  readOnly = false,
 }: {
   navItems: NavItem[];
   summary: string;
+  readOnly?: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -94,6 +96,7 @@ export default function MobileSidebar({
                 className="mt-3 flex h-11 items-center gap-3 rounded-lg px-3 text-[13px] text-[#bdc8bf] transition hover:bg-[#253229] hover:text-white disabled:opacity-60"
               />
               <div className="mt-auto rounded-xl border border-white/10 bg-white/[.04] p-4">
+                {readOnly && <p className="mb-2 text-[10px] font-medium text-[#d7e7cc]">View-only access</p>}
                 <p className="text-xs font-medium text-[#e1e9e2]">
                   Pimpri-Chinchwad Photography Association
                 </p>

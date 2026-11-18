@@ -158,7 +158,7 @@ function Icon({ name, size = 18 }: { name: string; size?: number }) {
   );
 }
 
-export default function RegistrationsDirectory() {
+export default function RegistrationsDirectory({ readOnly = false }: { readOnly?: boolean }) {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [members, setMembers] = useState<MemberOption[]>([]);
   const [workshopOptions, setWorkshopOptions] = useState<WorkshopOption[]>([]);
@@ -309,7 +309,7 @@ export default function RegistrationsDirectory() {
 
   return (
     <main className="min-h-screen bg-[#f7f8f5] text-[#1c2720]">
-      <AppSidebar activeRoute="registrations" counts={{ registrations: registrations.length }} />
+      <AppSidebar activeRoute="registrations" counts={{ registrations: registrations.length }} readOnly={readOnly} />
 
       <section className="lg:pl-[252px]">
         <header className="sticky top-0 z-10 flex h-[70px] items-center justify-between border-b border-[#e9ece6] bg-[#fbfcfa]/95 px-5 backdrop-blur-md sm:px-8 lg:px-10">
@@ -328,6 +328,7 @@ export default function RegistrationsDirectory() {
                 },
               ]}
               summary={`${registrations.length} registrations`}
+              readOnly={readOnly}
             />
             <div>
               <p className="text-[11px] text-[#8b948c]">
@@ -356,12 +357,12 @@ export default function RegistrationsDirectory() {
                 Track workshop sign-ups, payments and attendance.
               </p>
             </div>
-            <Button
+            {!readOnly && <Button
               onClick={() => setShowCreateForm(true)}
               className="h-10 w-fit gap-2 rounded-lg bg-[#314c35] px-3.5 text-xs font-medium text-white shadow-sm hover:bg-[#263d2a]"
             >
               <Icon name="plus" size={15} /> Create registration
-            </Button>
+            </Button>}
           </div>
 
           <div className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-4">
@@ -515,7 +516,7 @@ export default function RegistrationsDirectory() {
                           <AttendanceBadge status={registration.attendance} />
                         </td>
                         <td className="px-5 py-3.5">
-                          {registration.payment === "Pending" ? (
+                          {!readOnly && registration.payment === "Pending" ? (
                             <button
                               onClick={() =>
                                 void updateRegistration(
@@ -528,7 +529,7 @@ export default function RegistrationsDirectory() {
                             >
                               Mark paid
                             </button>
-                          ) : registration.attendance === "Registered" ? (
+                          ) : !readOnly && registration.attendance === "Registered" ? (
                             <button
                               onClick={() =>
                                 void updateRegistration(
@@ -604,7 +605,7 @@ export default function RegistrationsDirectory() {
           </footer>
         </div>
       </section>
-      {showCreateForm && (
+      {showCreateForm && !readOnly && (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center bg-[#142019]/40 p-4 backdrop-blur-[2px]"
           onMouseDown={(event) => {

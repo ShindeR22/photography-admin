@@ -1,7 +1,10 @@
 import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
+import { requireAdminWrite } from "@/lib/current-admin";
 
 export async function POST(request: Request) {
+  const denied = await requireAdminWrite();
+  if (denied) return denied;
   let publicId: unknown;
   let imageUrl: unknown;
   try {

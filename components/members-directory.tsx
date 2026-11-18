@@ -285,7 +285,7 @@ function Icon({ name, size = 18 }: { name: string; size?: number }) {
   );
 }
 
-export default function MembersDirectory() {
+export default function MembersDirectory({ readOnly = false }: { readOnly?: boolean }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [memberRecords, setMemberRecords] = useState<MemberRecord[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<MemberRecord | null>(null);
@@ -564,7 +564,7 @@ export default function MembersDirectory() {
 
   return (
     <main className="min-h-screen bg-[#f7f8f5] text-[#1c2720]">
-      <AppSidebar activeRoute="members" counts={{ members: members.length }} />
+      <AppSidebar activeRoute="members" counts={{ members: members.length }} readOnly={readOnly} />
 
       <section className="lg:pl-[252px]">
         <header className="sticky top-0 z-10 flex h-[70px] items-center justify-between border-b border-[#e9ece6] bg-[#fbfcfa]/95 px-5 backdrop-blur-md sm:px-8 lg:px-10">
@@ -583,6 +583,7 @@ export default function MembersDirectory() {
                 { label: "Registrations", href: "/registrations", icon: "▤" },
               ]}
               summary={`${members.length} members`}
+              readOnly={readOnly}
             />
             <div>
               <p className="text-[11px] text-[#8b948c]">
@@ -622,12 +623,12 @@ export default function MembersDirectory() {
               <Button className="h-10 gap-2 rounded-lg border border-[#e0e6de] bg-white px-3.5 text-xs font-medium text-[#536256] shadow-sm hover:bg-[#f7f9f5]">
                 <Icon name="download" size={15} /> Export
               </Button>
-              <Button
+              {!readOnly && <Button
                 onClick={openAddForm}
                 className="h-10 gap-2 rounded-lg bg-[#314c35] px-4 text-xs font-medium text-white shadow-sm hover:bg-[#263d2a]"
               >
                 <Icon name="plus" size={16} /> Add member
-              </Button>
+              </Button>}
             </div>
           </div>
 
@@ -817,7 +818,7 @@ export default function MembersDirectory() {
                             >
                               View
                             </button>
-                            <button
+                            {!readOnly && <button
                               onClick={() => {
                                 const record = memberRecords.find(
                                   (item) => item.memberNumber === member.id,
@@ -827,7 +828,7 @@ export default function MembersDirectory() {
                               className="rounded-md border border-[#e7ebe5] px-2 py-1 text-[10px] text-[#536256] hover:bg-[#f5f7f3]"
                             >
                               Edit
-                            </button>
+                            </button>}
                             {member.status === "Active" && (
                               <button
                                 onClick={() => {
@@ -841,7 +842,7 @@ export default function MembersDirectory() {
                                 Download ID
                               </button>
                             )}
-                            {member.status === "Pending" && (
+                            {!readOnly && member.status === "Pending" && (
                               <button
                                 onClick={() => {
                                   const record = memberRecords.find(
@@ -1002,7 +1003,7 @@ export default function MembersDirectory() {
                 </div>
               ))}
             </div>
-            <div className="mt-6 flex justify-end">
+            {!readOnly && <div className="mt-6 flex justify-end">
               <Button
                 onClick={() => {
                   const record = selectedRecord;
@@ -1013,12 +1014,12 @@ export default function MembersDirectory() {
               >
                 Edit member
               </Button>
-            </div>
+            </div>}
           </div>
         </div>
       )}
 
-      {showAddForm && (
+      {showAddForm && !readOnly && (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center bg-[#142019]/40 p-4 backdrop-blur-[2px]"
           onMouseDown={(event) => {

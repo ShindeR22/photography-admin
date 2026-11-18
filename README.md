@@ -42,6 +42,8 @@ The admin dashboard is protected by a signed, HTTP-only session cookie. On the f
 ADMIN_LOGIN_ID=your-admin-id
 ADMIN_LOGIN_PASSWORD=use-a-unique-password
 ADMIN_SESSION_SECRET=use-a-long-random-secret
+VIEWER_LOGIN_ID=your-viewer-id
+VIEWER_LOGIN_PASSWORD=use-a-unique-password
 ```
 
-The local `.env.local` is preconfigured with the login ID and password provided for this project. Set all three variables in the hosting provider before deploying.
+The full-access account uses `ADMIN_LOGIN_ID` and `ADMIN_LOGIN_PASSWORD`. The view-only account uses `VIEWER_LOGIN_ID` and `VIEWER_LOGIN_PASSWORD`; its database record is created with the `viewer` role on first login. Viewer sessions can read dashboard data but cannot make changes. Set all five variables in the hosting provider before deploying.

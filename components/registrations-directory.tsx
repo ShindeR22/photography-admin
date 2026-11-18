@@ -29,7 +29,7 @@ type RegistrationRecord = {
   registrationNumber: string;
   memberNumber: string;
   memberName: string;
-  memberEmail: string;
+  memberEmail: string | null;
   workshopTitle: string;
   registeredAt: string;
   amount: number;
@@ -52,7 +52,7 @@ function registrationFromRecord(record: RegistrationRecord, index: number): Regi
     id: record.id,
     number: record.registrationNumber,
     name: record.memberName,
-    email: record.memberEmail,
+    email: record.memberEmail ?? "",
     memberId: record.memberNumber,
     workshop: record.workshopTitle,
     date: new Date(record.registeredAt).toLocaleDateString("en-IN", {

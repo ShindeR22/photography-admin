@@ -36,7 +36,11 @@ export async function createWorkshop(request: Request) {
   const { date: dateValue, ...workshopData } = validation.data;
   try {
     const workshop = await prisma.workshop.create({
-      data: { ...workshopData, isActive: false, date: new Date(`${dateValue}T12:00:00.000Z`) },
+      data: {
+        ...workshopData,
+        isActive: false,
+        date: new Date(`${dateValue}T12:00:00.000Z`),
+      },
     });
 
     return Response.json(workshop, { status: 201 });

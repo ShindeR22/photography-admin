@@ -66,10 +66,14 @@ model Workshop {
 model Registration {
   id                 String   @id @default(auto()) @map("_id") @db.ObjectId
   registrationNumber String   @unique
-  memberId           String   @db.ObjectId
+  memberId           String?  @db.ObjectId
   memberNumber       String
   memberName         String
-  memberEmail        String
+  memberEmail        String?
+  phoneNumber        String   @default("")
+  studioName         String   @default("")
+  address            String   @default("")
+  profession         String   @default("")
   workshopId         String   @db.ObjectId
   workshopTitle      String
   registeredAt       DateTime @default(now())

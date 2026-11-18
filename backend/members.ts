@@ -4,12 +4,14 @@ import { memberSchema } from "@/lib/zod/member";
 
 export async function getMembers() {
   try {
-    return Response.json(await prisma.member.findMany({
-      where: {
-        OR: [{ deletedAt: null }, { deletedAt: { isSet: false } }],
-      },
-      orderBy: { joinedAt: "desc" },
-    }));
+    return Response.json(
+      await prisma.member.findMany({
+        where: {
+          OR: [{ deletedAt: null }, { deletedAt: { isSet: false } }],
+        },
+        orderBy: { joinedAt: "desc" },
+      }),
+    );
   } catch {
     return Response.json({ error: "Could not load members from the database." }, { status: 500 });
   }
@@ -42,7 +44,7 @@ export async function createMember(request: Request) {
         ...validation.data,
         registrationDate: joinedAt,
         email: validation.data.email || `member-${randomUUID()}@pcpa.invalid`,
-        memberNumber: `PCMC-${String(memberCount + 1).padStart(4, "0")}`,
+        memberNumber: `PCPA-${String(memberCount + 1).padStart(4, "0")}`,
         joinedAt,
         expiresAt,
       },
@@ -106,7 +108,10 @@ export async function approveMember(id: string) {
     });
     if (!result.count) {
       const exists = await prisma.member.findUnique({ where: { id }, select: { id: true } });
-      return Response.json({ error: exists ? "Member is not pending approval." : "Member not found." }, { status: exists ? 409 : 404 });
+      return Response.json(
+        { error: exists ? "Member is not pending approval." : "Member not found." },
+        { status: exists ? 409 : 404 },
+      );
     }
     const member = await prisma.member.findUnique({ where: { id } });
     return Response.json(member);

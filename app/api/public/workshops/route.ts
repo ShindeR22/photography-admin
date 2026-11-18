@@ -12,7 +12,7 @@ export async function OPTIONS() {
 
 export async function GET() {
   try {
-    const workshops = await prisma.workshop.findMany({
+    const workshopRecords = await prisma.workshop.findMany({
       where: {
         isActive: true,
         OR: [{ deletedAt: null }, { deletedAt: { isSet: false } }],
@@ -31,6 +31,10 @@ export async function GET() {
         imageUrls: true,
       },
     });
+    const workshops = workshopRecords.map((workshop) => ({
+      ...workshop,
+      memberRegistrationFee: workshop.registrationFee * 0.5,
+    }));
 
     return Response.json(workshops, {
       headers: { ...corsHeaders, "Cache-Control": "no-store" },

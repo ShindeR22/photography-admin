@@ -2,6 +2,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ADMIN_COOKIE, getAdminSession } from "@/lib/admin-session";
 
 export function proxy(request: NextRequest) {
+  // The route handler provides CORS and enforces admin access for writes.
+  // Let GET and preflight reach it without the dashboard login redirect.
+  if (request.nextUrl.pathname === "/api/members") return NextResponse.next();
+
   const session = getAdminSession(request.cookies.get(ADMIN_COOKIE)?.value);
   if (request.nextUrl.pathname === "/login") {
     return session ? NextResponse.redirect(new URL("/", request.url)) : NextResponse.next();
@@ -21,5 +25,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!login|api/auth|workshops/register|_next/static|_next/image|favicon.ico).*)", "/login"],
+  matcher: ["/((?!login|api/auth|workshops/register|_next/static|_next/image|favicon.ico|pcpa-logo.png).*)", "/login"],
 };

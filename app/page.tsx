@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +30,8 @@ function formatDate(date: Date) {
 }
 
 export default async function Home() {
+  await connection();
+
   const [members, workshops, registrations, readOnly] = await Promise.all([
     prisma.member.findMany({ orderBy: { joinedAt: "desc" } }),
     prisma.workshop.findMany({

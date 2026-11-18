@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState, type FormEvent } from "react";
+import { Suspense, use, useEffect, useState, type FormEvent } from "react";
 
 type Workshop = {
   id: string;
@@ -24,6 +24,14 @@ export default function WorkshopRegistrationPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-[#f7f8f5] px-4 py-10 text-center text-sm text-[#78847a]">Loading workshop...</main>}>
+      <WorkshopRegistrationContent params={params} />
+    </Suspense>
+  );
+}
+
+function WorkshopRegistrationContent({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [workshop, setWorkshop] = useState<Workshop | null>(null);
   const [isLoading, setIsLoading] = useState(true);

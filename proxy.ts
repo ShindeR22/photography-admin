@@ -2,9 +2,21 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ADMIN_COOKIE, getAdminSession } from "@/lib/admin-session";
 
 export function proxy(request: NextRequest) {
-  // The route handler provides CORS and enforces admin access for writes.
-  // Let GET and preflight reach it without the dashboard login redirect.
-  if (request.nextUrl.pathname === "/api/members") return NextResponse.next();
+  if (request.nextUrl.pathname === "/api/members") {
+    if (request.method === "OPTIONS") {
+      return new NextResponse(null, {
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        },
+      });
+    }
+
+    // The route handler provides CORS and enforces admin access for writes.
+    return NextResponse.next();
+  }
 
   const session = getAdminSession(request.cookies.get(ADMIN_COOKIE)?.value);
   if (request.nextUrl.pathname === "/login") {

@@ -56,6 +56,7 @@ model Workshop {
   imageUrls       String[] @default([])
   imagePublicIds  String[] @default([])
   status          String   @default("Planning")
+  isActive        Boolean  @default(false)
   createdAt       DateTime @default(now())
   deletedAt       DateTime?
 

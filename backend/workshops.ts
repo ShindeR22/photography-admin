@@ -36,7 +36,7 @@ export async function createWorkshop(request: Request) {
   const { date: dateValue, ...workshopData } = validation.data;
   try {
     const workshop = await prisma.workshop.create({
-      data: { ...workshopData, date: new Date(`${dateValue}T12:00:00.000Z`) },
+      data: { ...workshopData, isActive: false, date: new Date(`${dateValue}T12:00:00.000Z`) },
     });
 
     return Response.json(workshop, { status: 201 });
@@ -65,6 +65,29 @@ export async function updateWorkshop(request: Request, id: string) {
     body = await request.json();
   } catch {
     return Response.json({ error: "Invalid request body." }, { status: 400 });
+  }
+
+  if (body && typeof body === "object" && "isActive" in body) {
+    const isActive = (body as { isActive?: unknown }).isActive;
+    if (typeof isActive !== "boolean" || Object.keys(body).length !== 1) {
+      return Response.json({ error: "Invalid workshop status." }, { status: 400 });
+    }
+    try {
+      const workshop = await prisma.workshop.update({
+        where: { id, OR: [{ deletedAt: null }, { deletedAt: { isSet: false } }] },
+        data: { isActive },
+      });
+      return Response.json(workshop);
+    } catch (error) {
+      if (error instanceof Error && error.name === "PrismaClientKnownRequestError" && "code" in error && error.code === "P2025") {
+        return Response.json({ error: "Workshop not found." }, { status: 404 });
+      }
+      console.error("Could not update workshop status:", error);
+      return Response.json({
+        error: "Could not update workshop status.",
+        ...(process.env.NODE_ENV === "development" && error instanceof Error ? { detail: error.message } : {}),
+      }, { status: 500 });
+    }
   }
 
   const validation = workshopSchema.safeParse(body);

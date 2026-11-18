@@ -21,6 +21,7 @@ type Workshop = {
   venue: string;
   fee: number;
   status: WorkshopStatus;
+  isActive: boolean;
   tone: string;
   description: string;
   mentorName: string;
@@ -45,6 +46,7 @@ type WorkshopRecord = {
   mentorName: string;
   time: string;
   status: string;
+  isActive?: boolean;
   venueFee?: number | null;
   mentorFee?: number | null;
   foodExpense?: number | null;
@@ -75,6 +77,7 @@ function workshopFromRecord(record: WorkshopRecord, index: number): Workshop {
     venue: record.venue,
     fee: record.registrationFee,
     status,
+    isActive: record.isActive ?? false,
     tone: ["olive", "rose", "blue", "peach", "yellow"][index % 5],
     description: record.description,
     mentorName: record.mentorName,
@@ -237,6 +240,7 @@ export default function WorkshopsDirectory() {
   const [currentTime, setCurrentTime] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [statusError, setStatusError] = useState("");
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState("All workshops");
   const [showForm, setShowForm] = useState(false);
@@ -434,6 +438,27 @@ export default function WorkshopsDirectory() {
       setDeleteError(error instanceof Error ? error.message : "Could not delete workshop.");
     } finally {
       setIsDeleting(false);
+    }
+  }
+
+  async function toggleWorkshopActive(workshop: Workshop) {
+    const isActive = !workshop.isActive;
+    setStatusError("");
+    try {
+      const response = await fetch(`/api/workshops/${workshop.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error([result.error || "Could not update workshop status.", result.detail].filter(Boolean).join(" "));
+      }
+      const updated = { ...workshop, isActive: result.isActive ?? isActive };
+      setWorkshops((current) => current.map((item) => item.id === workshop.id ? updated : item));
+      setSelectedWorkshop((current) => current?.id === workshop.id ? updated : current);
+    } catch (error) {
+      setStatusError(error instanceof Error ? error.message : "Could not update workshop status.");
     }
   }
 
@@ -682,7 +707,7 @@ export default function WorkshopsDirectory() {
                 {visible.map((workshop) => (
                   <article
                     key={workshop.id}
-                    role="button" tabIndex={0} onClick={() => setSelectedWorkshop(workshop)}
+                    tabIndex={0} onClick={() => setSelectedWorkshop(workshop)}
                     onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedWorkshop(workshop); } }}
                     aria-label={`View ${workshop.title} details`}
                     className={`flex cursor-pointer flex-col gap-4 px-4 py-4 transition focus-visible:outline-2 focus-visible:outline-[#55754c] sm:flex-row sm:items-center sm:px-5 ${new Date(workshop.dateIso).getTime() >= currentTime ? "bg-[#f3f7f0] hover:bg-[#eaf1e5]" : "bg-[#f6f3f1] hover:bg-[#eee9e6]"}`}
@@ -720,15 +745,25 @@ export default function WorkshopsDirectory() {
                         <span>Mentor: {workshop.mentorName}</span>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
+                      <Button
+                        type="button"
+                        aria-pressed={workshop.isActive}
+                        onClick={(event) => { event.stopPropagation(); void toggleWorkshopActive(workshop); }}
+                        onKeyDown={(event) => event.stopPropagation()}
+                        className={`h-8 rounded-lg px-3 text-[10px] ${workshop.isActive ? "border border-[#c8d7bf] bg-white text-[#49633f] hover:bg-[#edf4e9]" : "bg-[#59635b] text-white hover:bg-[#414c43]"}`}
+                      >{workshop.isActive ? "Active" : "Inactive"}</Button>
+                      <div className="text-right">
                       <p className="text-[9px] text-[#8c968e]">Registration fee</p>
                       <p className="mt-1 text-sm font-semibold text-[#455148]">
                         ₹ {workshop.fee.toLocaleString("en-IN")}
                       </p>
+                      </div>
                     </div>
                   </article>
                 ))}
               </div>
+              {statusError && <p role="alert" className="border-t border-red-100 px-5 py-3 text-xs text-red-600">{statusError}</p>}
               {isLoading && (
                 <div className="px-5 py-14 text-center text-xs text-[#8c968e]">
                   Loading workshops from the database…

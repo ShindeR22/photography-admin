@@ -34,3 +34,14 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Admin login configuration
+
+The admin dashboard is protected by a signed, HTTP-only session cookie. On the first successful login, the configured administrator is provisioned into the MongoDB `admins` collection with a salted scrypt password hash. Later logins are checked against that database record. Configure these environment variables in each environment (the local `.env.local` file is ignored by git):
+
+```env
+ADMIN_LOGIN_ID=your-admin-id
+ADMIN_LOGIN_PASSWORD=use-a-unique-password
+ADMIN_SESSION_SECRET=use-a-long-random-secret
+```
+
+The local `.env.local` is preconfigured with the login ID and password provided for this project. Set all three variables in the hosting provider before deploying.

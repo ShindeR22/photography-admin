@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pune Camera Association | Admin",
+  title: "Pimpri-Chinchwad Photography Association | Admin",
   description:
     "Admin dashboard for Pune Camera Photography Association members, workshops, registrations and accounts.",
 };

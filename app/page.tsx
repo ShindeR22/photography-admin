@@ -83,7 +83,14 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-[#f7f8f5] text-[#1c2720]">
-      <AppSidebar activeRoute="overview" counts={{ members: members.length, workshops: workshops.length, registrations: registrations.length }} />
+      <AppSidebar
+        activeRoute="overview"
+        counts={{
+          members: members.length,
+          workshops: workshops.length,
+          registrations: registrations.length,
+        }}
+      />
 
       <section className="lg:pl-[252px]">
         <header className="sticky top-0 z-10 flex h-[70px] items-center justify-between border-b border-[#e9ece6] bg-[#fbfcfa]/95 px-5 backdrop-blur-md sm:px-8 lg:px-10">
@@ -96,7 +103,9 @@ export default async function Home() {
               <p className="text-[11px] text-[#8b948c]">
                 Association / <span className="text-[#455248]">Overview</span>
               </p>
-              <p className="mt-0.5 text-sm font-semibold lg:hidden">Pune Camera Association</p>
+              <p className="mt-0.5 text-sm font-semibold lg:hidden">
+                Pimpri-Chinchwad Photography Association
+              </p>
             </div>
           </div>
           <p className="hidden text-[11px] font-medium text-[#59645c] sm:block">

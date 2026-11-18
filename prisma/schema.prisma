@@ -83,3 +83,13 @@ model Registration {
 
   @@map("registrations")
 }
+
+model Admin {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  loginId      String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("admins")
+}

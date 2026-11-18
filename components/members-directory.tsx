@@ -62,7 +62,13 @@ async function imageAsDataUrl(url: string) {
 }
 
 function escapeXml(value: string) {
-  const entities: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" };
+  const entities: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&apos;",
+  };
   return value.replace(/[&<>"']/g, (char) => entities[char]);
 }
 
@@ -74,14 +80,26 @@ async function downloadMemberIdCard(record: MemberRecord) {
   const name = escapeXml(record.name);
   const memberId = escapeXml(record.memberNumber);
   const address = (record.address || "—").replace(/\s+/g, " ").trim();
-  const addressLines = address.match(/.{1,42}(?:\s|$)/g)?.map((line) => line.trim()).slice(0, 3) ?? [address];
-  const addressMarkup = addressLines.map((line, index) => `<tspan x="54" dy="${index ? 23 : 0}">${escapeXml(line)}</tspan>`).join("");
+  const addressLines = address
+    .match(/.{1,42}(?:\s|$)/g)
+    ?.map((line) => line.trim())
+    .slice(0, 3) ?? [address];
+  const addressMarkup = addressLines
+    .map((line, index) => `<tspan x="54" dy="${index ? 23 : 0}">${escapeXml(line)}</tspan>`)
+    .join("");
   const registrationDate = escapeXml(formatMemberDate(record.registrationDate ?? record.joinedAt));
   const expiry = escapeXml(formatMemberDate(record.expiresAt));
   const aadhaar = escapeXml(record.aadhaarNumber || "—");
   const membershipType = escapeXml(record.membershipType || "Member");
   const phone = escapeXml(record.phone || "—");
-  const initials = escapeXml(record.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase());
+  const initials = escapeXml(
+    record.name
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase(),
+  );
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1080" height="1712" viewBox="0 0 540 856">
     <defs><linearGradient id="header" x2="1"><stop stop-color="#19241d"/><stop offset="1" stop-color="#314c35"/></linearGradient><clipPath id="photo"><rect x="190" y="166" width="160" height="178" rx="16"/></clipPath></defs>
     <rect x="1" y="1" width="538" height="854" rx="24" fill="#fff" stroke="#dce5d7" stroke-width="2"/><path d="M24 2h492a22 22 0 0 1 22 22v132H2V24A22 22 0 0 1 24 2" fill="url(#header)"/>
@@ -114,7 +132,12 @@ async function downloadMemberIdCard(record: MemberRecord) {
     const context = canvas.getContext("2d");
     if (!context) throw new Error("Could not create the ID card image.");
     context.drawImage(image, 0, 0);
-    const png = await new Promise<Blob>((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Could not export the ID card.")), "image/png"));
+    const png = await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error("Could not export the ID card."))),
+        "image/png",
+      ),
+    );
     const downloadUrl = URL.createObjectURL(png);
     const link = document.createElement("a");
     link.href = downloadUrl;
@@ -286,7 +309,11 @@ export default function MembersDirectory() {
   const [photoUploadError, setPhotoUploadError] = useState("");
   const [uploadingPhoto, setUploadingPhoto] = useState("");
 
-  async function uploadMemberPhoto(file: File | undefined, kind: string, setUrl: (url: string) => void) {
+  async function uploadMemberPhoto(
+    file: File | undefined,
+    kind: string,
+    setUrl: (url: string) => void,
+  ) {
     if (!file) return;
     if (!file.type.startsWith("image/") || file.size > 10 * 1024 * 1024) {
       setPhotoUploadError("Choose an image file smaller than 10 MB.");
@@ -305,9 +332,13 @@ export default function MembersDirectory() {
       body.append("file", file);
       body.append("upload_preset", uploadPreset);
       body.append("folder", "pcpa/members");
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: "POST", body });
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: "POST",
+        body,
+      });
       const result = await response.json();
-      if (!response.ok || typeof result.secure_url !== "string") throw new Error(result.error?.message || "Could not upload photo.");
+      if (!response.ok || typeof result.secure_url !== "string")
+        throw new Error(result.error?.message || "Could not upload photo.");
       setUrl(result.secure_url);
     } catch (error) {
       setPhotoUploadError(error instanceof Error ? error.message : "Could not upload photo.");
@@ -379,35 +410,58 @@ export default function MembersDirectory() {
     setIsSubmitting(true);
     try {
       const formData = new FormData(event.currentTarget);
-      const response = await fetch(editingMember ? `/api/members/${editingMember.id}` : "/api/members", {
-        method: editingMember ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.get("name"), email: formData.get("email"),
-          address: formData.get("address"), phone: formData.get("phone"),
-          studioName: formData.get("studioName"), aadhaarNumber: formData.get("aadhaarNumber"),
-          udyamAadhaar: formData.get("udyamAadhaar"), membershipFee: formData.get("membershipFee"),
-          experienceYears: formData.get("experienceYears"), bloodGroup: formData.get("bloodGroup"),
-          membershipPeriodYears: formData.get("membershipPeriodYears"), registrationDate: formData.get("registrationDate"),
-          professions: formData.getAll("professions"), camerasUsed: formData.getAll("camerasUsed"),
-          photoUrl: memberPhotoUrl, aadhaarPhotoUrl, udyamAadhaarPhotoUrl: udyamPhotoUrl,
-        }),
-      });
+      const response = await fetch(
+        editingMember ? `/api/members/${editingMember.id}` : "/api/members",
+        {
+          method: editingMember ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.get("name"),
+            email: formData.get("email"),
+            address: formData.get("address"),
+            phone: formData.get("phone"),
+            studioName: formData.get("studioName"),
+            aadhaarNumber: formData.get("aadhaarNumber"),
+            udyamAadhaar: formData.get("udyamAadhaar"),
+            membershipFee: formData.get("membershipFee"),
+            experienceYears: formData.get("experienceYears"),
+            bloodGroup: formData.get("bloodGroup"),
+            membershipPeriodYears: formData.get("membershipPeriodYears"),
+            registrationDate: formData.get("registrationDate"),
+            professions: formData.getAll("professions"),
+            camerasUsed: formData.getAll("camerasUsed"),
+            photoUrl: memberPhotoUrl,
+            aadhaarPhotoUrl,
+            udyamAadhaarPhotoUrl: udyamPhotoUrl,
+          }),
+        },
+      );
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not save the member.");
       const savedRecord = result as MemberRecord;
-      setMembers((current) => editingMember
-        ? current.map((member) => member.id === savedRecord.memberNumber ? memberFromRecord(savedRecord, current.indexOf(member)) : member)
-        : [memberFromRecord(savedRecord, 0), ...current]);
-      setMemberRecords((current) => editingMember
-        ? current.map((record) => record.id === savedRecord.id ? savedRecord : record)
-        : [savedRecord, ...current]);
+      setMembers((current) =>
+        editingMember
+          ? current.map((member) =>
+              member.id === savedRecord.memberNumber
+                ? memberFromRecord(savedRecord, current.indexOf(member))
+                : member,
+            )
+          : [memberFromRecord(savedRecord, 0), ...current],
+      );
+      setMemberRecords((current) =>
+        editingMember
+          ? current.map((record) => (record.id === savedRecord.id ? savedRecord : record))
+          : [savedRecord, ...current],
+      );
       setQuery("");
       setStatus("All members");
       setType("All types");
       setActiveTab("All members");
       form.reset();
-      setMemberPhotoUrl(""); setAadhaarPhotoUrl(""); setUdyamPhotoUrl(""); setUdyamNumber("");
+      setMemberPhotoUrl("");
+      setAadhaarPhotoUrl("");
+      setUdyamPhotoUrl("");
+      setUdyamNumber("");
       setEditingMember(null);
       setShowAddForm(false);
     } catch (error) {
@@ -419,14 +473,19 @@ export default function MembersDirectory() {
 
   function openAddForm() {
     setEditingMember(null);
-    setSubmitError(""); setPhotoUploadError("");
-    setMemberPhotoUrl(""); setAadhaarPhotoUrl(""); setUdyamPhotoUrl(""); setUdyamNumber("");
+    setSubmitError("");
+    setPhotoUploadError("");
+    setMemberPhotoUrl("");
+    setAadhaarPhotoUrl("");
+    setUdyamPhotoUrl("");
+    setUdyamNumber("");
     setShowAddForm(true);
   }
 
   function openEditForm(record: MemberRecord) {
     setEditingMember(record);
-    setSubmitError(""); setPhotoUploadError("");
+    setSubmitError("");
+    setPhotoUploadError("");
     setMemberPhotoUrl(record.photoUrl ?? "");
     setAadhaarPhotoUrl(record.aadhaarPhotoUrl ?? "");
     setUdyamPhotoUrl(record.udyamAadhaarPhotoUrl ?? "");
@@ -443,10 +502,16 @@ export default function MembersDirectory() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not approve member.");
       const updated = result as MemberRecord;
-      setMemberRecords((current) => current.map((item) => item.id === updated.id ? updated : item));
-      setMembers((current) => current.map((item) => item.id === updated.id || item.id === updated.memberNumber
-        ? memberFromRecord(updated, current.indexOf(item))
-        : item));
+      setMemberRecords((current) =>
+        current.map((item) => (item.id === updated.id ? updated : item)),
+      );
+      setMembers((current) =>
+        current.map((item) =>
+          item.id === updated.id || item.id === updated.memberNumber
+            ? memberFromRecord(updated, current.indexOf(item))
+            : item,
+        ),
+      );
     } catch (error) {
       setStatusActionError(error instanceof Error ? error.message : "Could not approve member.");
     } finally {
@@ -455,7 +520,12 @@ export default function MembersDirectory() {
   }
 
   async function softDeleteMember(record: MemberRecord) {
-    if (!window.confirm(`Soft delete ${record.name}? The record will be hidden from the member directory but kept in MongoDB.`)) return;
+    if (
+      !window.confirm(
+        `Soft delete ${record.name}? The record will be hidden from the member directory but kept in MongoDB.`,
+      )
+    )
+      return;
     setIsSubmitting(true);
     setSubmitError("");
     try {
@@ -499,12 +569,28 @@ export default function MembersDirectory() {
       <section className="lg:pl-[252px]">
         <header className="sticky top-0 z-10 flex h-[70px] items-center justify-between border-b border-[#e9ece6] bg-[#fbfcfa]/95 px-5 backdrop-blur-md sm:px-8 lg:px-10">
           <div className="flex items-center">
-            <MobileSidebar navItems={[{ label: "Overview", href: "/", icon: "◫" }, { label: "Members", href: "/members", icon: "♧", active: true, count: members.length }, { label: "Workshops", href: "/workshops", icon: "▦" }, { label: "Registrations", href: "/registrations", icon: "▤" }]} summary={`${members.length} members`} />
+            <MobileSidebar
+              navItems={[
+                { label: "Overview", href: "/", icon: "◫" },
+                {
+                  label: "Members",
+                  href: "/members",
+                  icon: "♧",
+                  active: true,
+                  count: members.length,
+                },
+                { label: "Workshops", href: "/workshops", icon: "▦" },
+                { label: "Registrations", href: "/registrations", icon: "▤" },
+              ]}
+              summary={`${members.length} members`}
+            />
             <div>
               <p className="text-[11px] text-[#8b948c]">
                 Association / <span className="text-[#455248]">Members</span>
               </p>
-              <p className="mt-0.5 text-sm font-semibold lg:hidden">Pune Camera Association</p>
+              <p className="mt-0.5 text-sm font-semibold lg:hidden">
+                Pimpri-Chinchwad Photography Association
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -660,8 +746,16 @@ export default function MembersDirectory() {
               </div>
 
               <div className="overflow-x-auto">
-                {statusActionError && <p role="alert" className="px-5 py-2 text-xs text-red-600">{statusActionError}</p>}
-                {idCardError && <p role="alert" className="px-5 py-2 text-xs text-red-600">{idCardError}</p>}
+                {statusActionError && (
+                  <p role="alert" className="px-5 py-2 text-xs text-red-600">
+                    {statusActionError}
+                  </p>
+                )}
+                {idCardError && (
+                  <p role="alert" className="px-5 py-2 text-xs text-red-600">
+                    {idCardError}
+                  </p>
+                )}
                 <table className="w-full min-w-[840px] text-left">
                   <thead>
                     <tr className="bg-[#fafbf9] text-[9px] font-medium uppercase tracking-[.1em] text-[#9aa39b]">
@@ -711,10 +805,59 @@ export default function MembersDirectory() {
                         </td>
                         <td className="px-5 py-3.5 text-right">
                           <div className="flex justify-end gap-2">
-                            <button onClick={() => setSelectedRecord(memberRecords.find((record) => record.memberNumber === member.id) ?? null)} className="rounded-md border border-[#e7ebe5] px-2 py-1 text-[10px] text-[#536256] hover:bg-[#f5f7f3]">View</button>
-                            <button onClick={() => { const record = memberRecords.find((item) => item.memberNumber === member.id); if (record) openEditForm(record); }} className="rounded-md border border-[#e7ebe5] px-2 py-1 text-[10px] text-[#536256] hover:bg-[#f5f7f3]">Edit</button>
-                            {member.status === "Active" && <button onClick={() => { const record = memberRecords.find((item) => item.memberNumber === member.id); if (record) void handleIdCardDownload(record); }} className="whitespace-nowrap rounded-md border border-[#d8e5d0] bg-[#f2f7ee] px-2 py-1 text-[10px] font-medium text-[#405b3c] hover:bg-[#e8f1e2]">Download ID</button>}
-                            {member.status === "Pending" && <button onClick={() => { const record = memberRecords.find((item) => item.memberNumber === member.id); if (record) void approveMember(record); }} disabled={!!approvingMemberId} className="rounded-md bg-[#314c35] px-2 py-1 text-[10px] text-white hover:bg-[#263d2a] disabled:opacity-50">{approvingMemberId === memberRecords.find((item) => item.memberNumber === member.id)?.id ? "Approving…" : "Approve"}</button>}
+                            <button
+                              onClick={() =>
+                                setSelectedRecord(
+                                  memberRecords.find(
+                                    (record) => record.memberNumber === member.id,
+                                  ) ?? null,
+                                )
+                              }
+                              className="rounded-md border border-[#e7ebe5] px-2 py-1 text-[10px] text-[#536256] hover:bg-[#f5f7f3]"
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={() => {
+                                const record = memberRecords.find(
+                                  (item) => item.memberNumber === member.id,
+                                );
+                                if (record) openEditForm(record);
+                              }}
+                              className="rounded-md border border-[#e7ebe5] px-2 py-1 text-[10px] text-[#536256] hover:bg-[#f5f7f3]"
+                            >
+                              Edit
+                            </button>
+                            {member.status === "Active" && (
+                              <button
+                                onClick={() => {
+                                  const record = memberRecords.find(
+                                    (item) => item.memberNumber === member.id,
+                                  );
+                                  if (record) void handleIdCardDownload(record);
+                                }}
+                                className="whitespace-nowrap rounded-md border border-[#d8e5d0] bg-[#f2f7ee] px-2 py-1 text-[10px] font-medium text-[#405b3c] hover:bg-[#e8f1e2]"
+                              >
+                                Download ID
+                              </button>
+                            )}
+                            {member.status === "Pending" && (
+                              <button
+                                onClick={() => {
+                                  const record = memberRecords.find(
+                                    (item) => item.memberNumber === member.id,
+                                  );
+                                  if (record) void approveMember(record);
+                                }}
+                                disabled={!!approvingMemberId}
+                                className="rounded-md bg-[#314c35] px-2 py-1 text-[10px] text-white hover:bg-[#263d2a] disabled:opacity-50"
+                              >
+                                {approvingMemberId ===
+                                memberRecords.find((item) => item.memberNumber === member.id)?.id
+                                  ? "Approving…"
+                                  : "Approve"}
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -777,14 +920,100 @@ export default function MembersDirectory() {
       </section>
 
       {selectedRecord && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-[#142019]/40 p-4 backdrop-blur-[2px]" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedRecord(null); }}>
-          <div role="dialog" aria-modal="true" aria-labelledby="member-detail-title" className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-[#e7ebe5] bg-white p-6 shadow-2xl">
-            <div className="flex items-start justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-[.13em] text-[#78906f]">Member profile · {selectedRecord.memberNumber}</p><h2 id="member-detail-title" className="mt-1 text-lg font-semibold">{selectedRecord.name}</h2></div><button onClick={() => setSelectedRecord(null)} aria-label="Close" className="rounded-md px-2 py-1 text-lg text-[#859087]">×</button></div>
-            <div className="mt-5 grid gap-5 sm:grid-cols-2">
-              <div className="flex flex-wrap gap-3 sm:col-span-2">{[["Member photo", selectedRecord.photoUrl], ["Aadhaar card", selectedRecord.aadhaarPhotoUrl], ["Udyam Aadhaar", selectedRecord.udyamAadhaarPhotoUrl]].filter(([, url]) => !!url).map(([label, url]) => <div key={label} className="w-36"><p className="mb-1 text-[10px] text-[#78837a]">{label}</p><a href={url} target="_blank" rel="noreferrer"><img src={url} alt={label} className="h-28 w-36 rounded-lg border border-[#e7ebe5] object-cover" /></a></div>)}</div>
-              {[["Phone", selectedRecord.phone], ["Email", selectedRecord.email?.endsWith("@pcpa.invalid") ? "—" : selectedRecord.email], ["Address", selectedRecord.address], ["Studio", selectedRecord.studioName], ["Aadhaar number", selectedRecord.aadhaarNumber], ["Udyam Aadhaar", selectedRecord.udyamAadhaar], ["Membership fee", selectedRecord.membershipFee == null ? "—" : `₹${selectedRecord.membershipFee}`], ["Period", `${selectedRecord.membershipPeriodYears ?? 1} year(s)`], ["Registration date", formatMemberDate(selectedRecord.registrationDate ?? selectedRecord.joinedAt)], ["Expiry date", formatMemberDate(selectedRecord.expiresAt)], ["Experience", `${selectedRecord.experienceYears ?? 0} year(s)`], ["Blood group", selectedRecord.bloodGroup || "—"], ["Profession", selectedRecord.professions?.join(", ") || "—"], ["Cameras", selectedRecord.camerasUsed?.join(", ") || "—"], ["Status", selectedRecord.status]].map(([label, value]) => <div key={label}><p className="text-[10px] text-[#929c94]">{label}</p><p className="mt-1 break-words text-xs text-[#37443a]">{value || "—"}</p></div>)}
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-[#142019]/40 p-4 backdrop-blur-[2px]"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setSelectedRecord(null);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="member-detail-title"
+            className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-[#e7ebe5] bg-white p-6 shadow-2xl"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[.13em] text-[#78906f]">
+                  Member profile · {selectedRecord.memberNumber}
+                </p>
+                <h2 id="member-detail-title" className="mt-1 text-lg font-semibold">
+                  {selectedRecord.name}
+                </h2>
+              </div>
+              <button
+                onClick={() => setSelectedRecord(null)}
+                aria-label="Close"
+                className="rounded-md px-2 py-1 text-lg text-[#859087]"
+              >
+                ×
+              </button>
             </div>
-            <div className="mt-6 flex justify-end"><Button onClick={() => { const record = selectedRecord; setSelectedRecord(null); openEditForm(record); }} className="h-9 rounded-lg bg-[#314c35] px-4 text-xs text-white">Edit member</Button></div>
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
+              <div className="flex flex-wrap gap-3 sm:col-span-2">
+                {[
+                  ["Member photo", selectedRecord.photoUrl],
+                  ["Aadhaar card", selectedRecord.aadhaarPhotoUrl],
+                  ["Udyam Aadhaar", selectedRecord.udyamAadhaarPhotoUrl],
+                ]
+                  .filter(([, url]) => !!url)
+                  .map(([label, url]) => (
+                    <div key={label} className="w-36">
+                      <p className="mb-1 text-[10px] text-[#78837a]">{label}</p>
+                      <a href={url} target="_blank" rel="noreferrer">
+                        <img
+                          src={url}
+                          alt={label}
+                          className="h-28 w-36 rounded-lg border border-[#e7ebe5] object-cover"
+                        />
+                      </a>
+                    </div>
+                  ))}
+              </div>
+              {[
+                ["Phone", selectedRecord.phone],
+                [
+                  "Email",
+                  selectedRecord.email?.endsWith("@pcpa.invalid") ? "—" : selectedRecord.email,
+                ],
+                ["Address", selectedRecord.address],
+                ["Studio", selectedRecord.studioName],
+                ["Aadhaar number", selectedRecord.aadhaarNumber],
+                ["Udyam Aadhaar", selectedRecord.udyamAadhaar],
+                [
+                  "Membership fee",
+                  selectedRecord.membershipFee == null ? "—" : `₹${selectedRecord.membershipFee}`,
+                ],
+                ["Period", `${selectedRecord.membershipPeriodYears ?? 1} year(s)`],
+                [
+                  "Registration date",
+                  formatMemberDate(selectedRecord.registrationDate ?? selectedRecord.joinedAt),
+                ],
+                ["Expiry date", formatMemberDate(selectedRecord.expiresAt)],
+                ["Experience", `${selectedRecord.experienceYears ?? 0} year(s)`],
+                ["Blood group", selectedRecord.bloodGroup || "—"],
+                ["Profession", selectedRecord.professions?.join(", ") || "—"],
+                ["Cameras", selectedRecord.camerasUsed?.join(", ") || "—"],
+                ["Status", selectedRecord.status],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <p className="text-[10px] text-[#929c94]">{label}</p>
+                  <p className="mt-1 break-words text-xs text-[#37443a]">{value || "—"}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 flex justify-end">
+              <Button
+                onClick={() => {
+                  const record = selectedRecord;
+                  setSelectedRecord(null);
+                  openEditForm(record);
+                }}
+                className="h-9 rounded-lg bg-[#314c35] px-4 text-xs text-white"
+              >
+                Edit member
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -810,9 +1039,15 @@ export default function MembersDirectory() {
                 <h2 id="add-member-title" className="mt-1 text-lg font-semibold tracking-tight">
                   {editingMember ? "Edit member details" : "Add a new member"}
                 </h2>
-                {editingMember && <p className="mt-1 text-[10px] font-medium text-[#667168]">Member ID: {editingMember.memberNumber} · fixed</p>}
+                {editingMember && (
+                  <p className="mt-1 text-[10px] font-medium text-[#667168]">
+                    Member ID: {editingMember.memberNumber} · fixed
+                  </p>
+                )}
                 <p className="mt-1 text-xs text-[#858f87]">
-                  {editingMember ? "Update the saved member profile." : "Create a profile and review it before approval."}
+                  {editingMember
+                    ? "Update the saved member profile."
+                    : "Create a profile and review it before approval."}
                 </p>
               </div>
               <button
@@ -844,31 +1079,192 @@ export default function MembersDirectory() {
                 <Input
                   name="email"
                   type="email"
-                  defaultValue={editingMember?.email?.endsWith("@pcpa.invalid") ? "" : editingMember?.email ?? ""}
+                  defaultValue={
+                    editingMember?.email?.endsWith("@pcpa.invalid")
+                      ? ""
+                      : (editingMember?.email ?? "")
+                  }
                   className="mt-1.5 h-10 text-xs"
                   placeholder="name@example.com"
                 />
               </label>
               <div className="grid gap-3 sm:grid-cols-2">
-                {[["Address", "address", "text"], ["Phone number", "phone", "tel"], ["Studio name", "studioName", "text"], ["Aadhaar card number", "aadhaarNumber", "text"], ["Udyam Aadhaar (optional)", "udyamAadhaar", "text"], ["Membership fee", "membershipFee", "number"], ["Photography experience (years)", "experienceYears", "number"]].map(([label, name, type]) => (
-                  <label key={name} className="block text-[11px] font-medium text-[#556158]">{label}<Input name={name} type={type} defaultValue={editingMember ? ({ address: editingMember.address, phone: editingMember.phone, studioName: editingMember.studioName, aadhaarNumber: editingMember.aadhaarNumber, udyamAadhaar: editingMember.udyamAadhaar, membershipFee: editingMember.membershipFee, experienceYears: editingMember.experienceYears } as Record<string, string | number | undefined>)[name] ?? "" : ""} required={name === "aadhaarNumber"} onChange={name === "udyamAadhaar" ? (event) => setUdyamNumber(event.target.value) : undefined} inputMode={name === "aadhaarNumber" || name === "phone" ? "numeric" : undefined} maxLength={name === "aadhaarNumber" ? 12 : name === "phone" ? 10 : undefined} pattern={name === "aadhaarNumber" ? "[0-9]{12}" : name === "phone" ? "[6-9][0-9]{9}" : undefined} min={type === "number" ? "0" : undefined} step={name === "membershipFee" ? "0.01" : undefined} className="mt-1.5 h-10 text-xs" /></label>
+                {[
+                  ["Address", "address", "text"],
+                  ["Phone number", "phone", "tel"],
+                  ["Studio name", "studioName", "text"],
+                  ["Aadhaar card number", "aadhaarNumber", "text"],
+                  ["Udyam Aadhaar (optional)", "udyamAadhaar", "text"],
+                  ["Membership fee", "membershipFee", "number"],
+                  ["Photography experience (years)", "experienceYears", "number"],
+                ].map(([label, name, type]) => (
+                  <label key={name} className="block text-[11px] font-medium text-[#556158]">
+                    {label}
+                    <Input
+                      name={name}
+                      type={type}
+                      defaultValue={
+                        editingMember
+                          ? ((
+                              {
+                                address: editingMember.address,
+                                phone: editingMember.phone,
+                                studioName: editingMember.studioName,
+                                aadhaarNumber: editingMember.aadhaarNumber,
+                                udyamAadhaar: editingMember.udyamAadhaar,
+                                membershipFee: editingMember.membershipFee,
+                                experienceYears: editingMember.experienceYears,
+                              } as Record<string, string | number | undefined>
+                            )[name] ?? "")
+                          : ""
+                      }
+                      required={name === "aadhaarNumber"}
+                      onChange={
+                        name === "udyamAadhaar"
+                          ? (event) => setUdyamNumber(event.target.value)
+                          : undefined
+                      }
+                      inputMode={
+                        name === "aadhaarNumber" || name === "phone" ? "numeric" : undefined
+                      }
+                      maxLength={name === "aadhaarNumber" ? 12 : name === "phone" ? 10 : undefined}
+                      pattern={
+                        name === "aadhaarNumber"
+                          ? "[0-9]{12}"
+                          : name === "phone"
+                            ? "[6-9][0-9]{9}"
+                            : undefined
+                      }
+                      min={type === "number" ? "0" : undefined}
+                      step={name === "membershipFee" ? "0.01" : undefined}
+                      className="mt-1.5 h-10 text-xs"
+                    />
+                  </label>
                 ))}
                 <div className="sm:col-span-2 grid gap-3 sm:grid-cols-3">
                   {photoInputs.map(([label, kind, url, setter]) => (
-                    <label key={kind} className="block text-[11px] font-medium text-[#556158]">{label}{kind === "udyam" && !udyamNumber.trim() ? " (optional)" : ""}<Input type="file" accept="image/*" disabled={!!uploadingPhoto} onChange={(event) => { void uploadMemberPhoto(event.target.files?.[0], kind, setter); event.currentTarget.value = ""; }} className="mt-1.5 h-10 cursor-pointer text-xs file:mr-2 file:rounded-md file:border-0 file:bg-[#edf3e9] file:px-2 file:py-1 file:text-[10px]" />{url ? <span className="mt-1 block text-[10px] text-green-700">Photo uploaded</span> : null}</label>
+                    <label key={kind} className="block text-[11px] font-medium text-[#556158]">
+                      {label}
+                      {kind === "udyam" && !udyamNumber.trim() ? " (optional)" : ""}
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        disabled={!!uploadingPhoto}
+                        onChange={(event) => {
+                          void uploadMemberPhoto(event.target.files?.[0], kind, setter);
+                          event.currentTarget.value = "";
+                        }}
+                        className="mt-1.5 h-10 cursor-pointer text-xs file:mr-2 file:rounded-md file:border-0 file:bg-[#edf3e9] file:px-2 file:py-1 file:text-[10px]"
+                      />
+                      {url ? (
+                        <span className="mt-1 block text-[10px] text-green-700">
+                          Photo uploaded
+                        </span>
+                      ) : null}
+                    </label>
                   ))}
                 </div>
-                {photoUploadError && <p role="alert" className="sm:col-span-2 text-xs text-red-600">{photoUploadError}</p>}
-                <label className="block text-[11px] font-medium text-[#556158]">Membership period (years)<Input name="membershipPeriodYears" type="number" required min="1" max="100" defaultValue={editingMember?.membershipPeriodYears ?? 1} className="mt-1.5 h-10 text-xs" /></label>
-                <label className="block text-[11px] font-medium text-[#556158]">Registration date<Input name="registrationDate" type="date" required defaultValue={editingMember?.registrationDate?.slice(0, 10) ?? editingMember?.joinedAt.slice(0, 10) ?? todayForDateInput()} className="mt-1.5 h-10 text-xs" /></label>
-                <label className="block text-[11px] font-medium text-[#556158]">Blood group (optional)<select name="bloodGroup" defaultValue={editingMember?.bloodGroup ?? ""} className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-xs"><option value="">Select</option>{["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((group) => <option key={group}>{group}</option>)}</select></label>
-                <fieldset className="text-[11px] font-medium text-[#556158]"><legend>Profession</legend><div className="mt-2 flex flex-wrap gap-x-3 gap-y-2">{["Photographer", "Cinematographer", "Video editor", "Photo editor", "Reel maker", "Other"].map((item) => <label key={item} className="flex items-center gap-1.5"><input type="checkbox" name="professions" value={item} defaultChecked={editingMember?.professions?.includes(item)} />{item}</label>)}</div></fieldset>
-                <fieldset className="text-[11px] font-medium text-[#556158]"><legend>Cameras used</legend><div className="mt-2 flex flex-wrap gap-x-3 gap-y-2">{["Canon", "Sony", "Nikon", "Fujifilm", "Lumix"].map((item) => <label key={item} className="flex items-center gap-1.5"><input type="checkbox" name="camerasUsed" value={item} defaultChecked={editingMember?.camerasUsed?.includes(item)} />{item}</label>)}</div></fieldset>
+                {photoUploadError && (
+                  <p role="alert" className="sm:col-span-2 text-xs text-red-600">
+                    {photoUploadError}
+                  </p>
+                )}
+                <label className="block text-[11px] font-medium text-[#556158]">
+                  Membership period (years)
+                  <Input
+                    name="membershipPeriodYears"
+                    type="number"
+                    required
+                    min="1"
+                    max="100"
+                    defaultValue={editingMember?.membershipPeriodYears ?? 1}
+                    className="mt-1.5 h-10 text-xs"
+                  />
+                </label>
+                <label className="block text-[11px] font-medium text-[#556158]">
+                  Registration date
+                  <Input
+                    name="registrationDate"
+                    type="date"
+                    required
+                    defaultValue={
+                      editingMember?.registrationDate?.slice(0, 10) ??
+                      editingMember?.joinedAt.slice(0, 10) ??
+                      todayForDateInput()
+                    }
+                    className="mt-1.5 h-10 text-xs"
+                  />
+                </label>
+                <label className="block text-[11px] font-medium text-[#556158]">
+                  Blood group (optional)
+                  <select
+                    name="bloodGroup"
+                    defaultValue={editingMember?.bloodGroup ?? ""}
+                    className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-xs"
+                  >
+                    <option value="">Select</option>
+                    {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((group) => (
+                      <option key={group}>{group}</option>
+                    ))}
+                  </select>
+                </label>
+                <fieldset className="text-[11px] font-medium text-[#556158]">
+                  <legend>Profession</legend>
+                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-2">
+                    {[
+                      "Photographer",
+                      "Cinematographer",
+                      "Video editor",
+                      "Photo editor",
+                      "Reel maker",
+                      "Other",
+                    ].map((item) => (
+                      <label key={item} className="flex items-center gap-1.5">
+                        <input
+                          type="checkbox"
+                          name="professions"
+                          value={item}
+                          defaultChecked={editingMember?.professions?.includes(item)}
+                        />
+                        {item}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+                <fieldset className="text-[11px] font-medium text-[#556158]">
+                  <legend>Cameras used</legend>
+                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-2">
+                    {["Canon", "Sony", "Nikon", "Fujifilm", "Lumix"].map((item) => (
+                      <label key={item} className="flex items-center gap-1.5">
+                        <input
+                          type="checkbox"
+                          name="camerasUsed"
+                          value={item}
+                          defaultChecked={editingMember?.camerasUsed?.includes(item)}
+                        />
+                        {item}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
               </div>
               <div className="flex items-center justify-between border-t border-[#edf0eb] pt-4">
-                <p className="text-[10px] text-[#909990]">{editingMember ? "Member ID cannot be changed." : "New applications start as pending."}</p>
+                <p className="text-[10px] text-[#909990]">
+                  {editingMember
+                    ? "Member ID cannot be changed."
+                    : "New applications start as pending."}
+                </p>
                 <div className="flex gap-2">
-                  {editingMember && <Button type="button" onClick={() => void softDeleteMember(editingMember)} disabled={isSubmitting} className="h-9 rounded-lg border border-red-200 bg-white px-3 text-xs text-red-700 hover:bg-red-50">Delete member</Button>}
+                  {editingMember && (
+                    <Button
+                      type="button"
+                      onClick={() => void softDeleteMember(editingMember)}
+                      disabled={isSubmitting}
+                      className="h-9 rounded-lg border border-red-200 bg-white px-3 text-xs text-red-700 hover:bg-red-50"
+                    >
+                      Delete member
+                    </Button>
+                  )}
                   <Button
                     onClick={() => setShowAddForm(false)}
                     className="h-9 rounded-lg border border-[#e4e9e2] bg-white px-3 text-xs text-[#5f6b62] hover:bg-[#f7f9f5]"

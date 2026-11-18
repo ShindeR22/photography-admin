@@ -121,6 +121,22 @@ export async function createPublicWorkshopRegistration(request: Request) {
     const registrationProfession = profession ?? "";
     const amount = isActiveMember ? workshop.registrationFee * 0.5 : workshop.registrationFee;
 
+    const existingRegistration = await prisma.registration.findFirst({
+      where: {
+        workshopId: workshop.id,
+        ...(isActiveMember
+          ? { memberNumber }
+          : { phoneNumber: registrationPhone }),
+      },
+      select: { id: true },
+    });
+    if (existingRegistration) {
+      return Response.json(
+        { error: "You are already registered for this workshop." },
+        { status: 409 },
+      );
+    }
+
     const registration = await prisma.registration.create({
       data: {
         registrationNumber: `REG-${randomUUID().slice(0, 8).toUpperCase()}`,

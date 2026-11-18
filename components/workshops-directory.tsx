@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -241,6 +240,7 @@ export default function WorkshopsDirectory() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [statusError, setStatusError] = useState("");
+  const [copiedRegistrationLinkId, setCopiedRegistrationLinkId] = useState("");
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState("All workshops");
   const [showForm, setShowForm] = useState(false);
@@ -459,6 +459,19 @@ export default function WorkshopsDirectory() {
       setSelectedWorkshop((current) => current?.id === workshop.id ? updated : current);
     } catch (error) {
       setStatusError(error instanceof Error ? error.message : "Could not update workshop status.");
+    }
+  }
+
+  async function copyRegistrationLink(workshopId: string) {
+    const registrationUrl = `${window.location.origin}/workshops/register/${workshopId}`;
+    try {
+      await navigator.clipboard.writeText(registrationUrl);
+      setCopiedRegistrationLinkId(workshopId);
+      window.setTimeout(() => {
+        setCopiedRegistrationLinkId((current) => current === workshopId ? "" : current);
+      }, 2000);
+    } catch {
+      setStatusError("Could not copy the registration link. Check clipboard permissions and try again.");
     }
   }
 
@@ -758,6 +771,14 @@ export default function WorkshopsDirectory() {
                       <p className="mt-1 text-sm font-semibold text-[#455148]">
                         ₹ {workshop.fee.toLocaleString("en-IN")}
                       </p>
+                      <button
+                        type="button"
+                        onClick={(event) => { event.stopPropagation(); void copyRegistrationLink(workshop.id); }}
+                        onKeyDown={(event) => event.stopPropagation()}
+                        className="mt-2 inline-flex rounded-md bg-[#314c35] px-2.5 py-1.5 text-[10px] font-medium text-white hover:bg-[#263d2a]"
+                      >
+                        {copiedRegistrationLinkId === workshop.id ? "Copied!" : "Copy registration link"}
+                      </button>
                       </div>
                     </div>
                   </article>

@@ -20,21 +20,12 @@ export const metadata: Metadata = {
     title: "Pimpri-Chinchwad Photography Association",
     description:
       "Photography workshops, community and member registrations in Pimpri-Chinchwad.",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1861,
-        height: 998,
-        alt: "Pimpri-Chinchwad Photography Association admin dashboard",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Pimpri-Chinchwad Photography Association",
     description:
       "Photography workshops, community and member registrations in Pimpri-Chinchwad.",
-    images: ["/og-image.png"],
   },
 };
 
